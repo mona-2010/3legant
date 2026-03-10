@@ -1,0 +1,70 @@
+"use client"
+import { createClient } from '@/lib/supabase/client'
+import { useForm, SubmitHandler } from "react-hook-form"
+type FormValues = {
+    email: string
+}
+
+const ForgotPwdForm = () => {
+    const supabase = createClient()
+    const {
+        register,
+        watch,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<FormValues>()
+
+    const handleForgotPassword:SubmitHandler<FormValues> = async () => {
+        const email = watch("email");
+        if (!email) {
+            alert("Please enter your email first")
+            return;
+        }
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: "http://localhost:3000/reset"
+        })
+        if (error) {
+            alert(error.message);
+        }
+    }
+
+    return (
+        <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-10 md:ml-25 text-gray-200">
+            <h1 className="font-poppins text-[40px] mb-15  font-[500] text-[#141718] leading-10">
+                Forgot Password?
+            </h1>
+
+            <form onSubmit={handleSubmit(handleForgotPassword)} className="w-full mr-auto">
+                <label>Your email address</label>
+                <input
+                    type="email"
+                    className="custom-input w-full border-b border-lightgray mb-1 focus:outline-none"
+                    {...register("email", {
+                        required: "Email is required",
+                        pattern: {
+                            value: /^\S+@\S+$/i,
+                            message: "Invalid email address",
+                        },
+                    })}
+                />
+                {errors.email && (
+                    <p className="text-red-500 text-sm mb-4">
+                        {errors.email.message}
+                    </p>
+                )}
+
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
+                >
+                    {isSubmitting ? "Sending link..." : "Send Reset Link"}
+                </button>
+
+            </form>
+        </div>
+    )
+}
+
+export default ForgotPwdForm
