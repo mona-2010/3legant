@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MdCelebration } from "react-icons/md";
 
 type Props = { total: number };
@@ -14,9 +15,9 @@ export default function CompleteOrder({ total }: Props) {
         <p>Total: ${total}</p>
       </div>
 
-      <button className="bg-black text-white px-10 py-4 rounded-full">
+      <Link href="/account" className="bg-black text-white px-10 py-4 rounded-full">
         Purchase History
-      </button>
+      </Link>
     </div>
   );
 }

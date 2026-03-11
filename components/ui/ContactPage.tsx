@@ -2,7 +2,7 @@ import React from 'react'
 import { Header } from '../dynamicComponents'
 import Breadcrumb from '../BreadCrumb'
 import AboutBanner from '../layout/AboutBanner'
-import ContactForm from '../layout/ContactForm'
+import ContactForm from '../forms/ContactForm'
 import Values from '../layout/Values'
 import Footer from '../layout/Footer'
 
