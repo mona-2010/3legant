@@ -1,9 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useForm, SubmitHandler } from "react-hook-form"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
+import { toast } from "react-toastify"
+import { useAuth } from "@/components/providers/AuthProvider"
+import AccountSkeleton from "../common/AccountSkeleton"
 
 type AccountFormValues = {
   firstName: string
@@ -16,54 +20,117 @@ type AccountFormValues = {
 }
 
 const AccountPage = () => {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
+  const { user, loading } = useAuth()
 
-  const [user, setUser] = useState<any>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<AccountFormValues>()
+  } = useForm<AccountFormValues>({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      displayName: "",
+      email: "",
+      oldPassword: "",
+      newPassword: "",
+      repeatPassword: "",
+    }
+  })
 
   useEffect(() => {
-    const fetchUser = async () => {
+    if (loading) return
+    if (!user) {
+      router.push("/sign-in")
+      return
+    }
+
+    const fetchProfile = async () => {
       try {
-        const { data, error } = await supabase.auth.getUser()
-        if (error) {
-          console.error("Supabase getUser error:", error)
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url")
+          .eq("id", user.id)
+          .single()
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Error fetching profile:", error)
           return
         }
 
-        if (!data.user) {
-          router.push("/sign-in")
-          return
-        }
-
-        setUser(data.user)
-        const metadata = data.user.user_metadata || {}
-        const fullName = metadata.full_name || ""
-        const [firstName, lastName] = fullName.split(" ")
+        const fullName = profile?.full_name || user.user_metadata?.full_name || ""
+        const [firstName, ...lastParts] = fullName.split(" ")
 
         setValue("firstName", firstName || "")
-        setValue("lastName", lastName || "")
-        setValue("displayName", metadata.display_name || "")
-        setValue("email", data.user.email || "")
+        setValue("lastName", lastParts.join(" ") || "")
+        setValue("displayName", user.user_metadata?.display_name || "")
+        setValue("email", user.email || "")
+
+        if (profile?.avatar_url) {
+          setAvatarUrl(profile.avatar_url)
+        } else if (user.user_metadata?.avatar_url) {
+          setAvatarUrl(user.user_metadata.avatar_url)
+        }
       } catch (err) {
-        console.error("Unexpected error fetching user:", err)
+        console.error("Unexpected error fetching user profile:", err)
       }
     }
 
-    fetchUser()
-  }, [supabase, setValue, router])
+    fetchProfile()
+  }, [loading, user])
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    const maxSize = 2 * 1024 * 1024 // 2MB
+    if (file.size > maxSize) {
+      toast.error("Image must be under 2MB")
+      return
+    }
+
+    setUploading(true)
+    const ext = file.name.split(".").pop()
+    const filePath = `${user.id}/avatar.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true })
+
+    if (uploadError) {
+      toast.error("Failed to upload avatar")
+      setUploading(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath)
+    const publicUrl = urlData.publicUrl
+
+    await supabase.from("profiles").upsert({ id: user.id, avatar_url: publicUrl })
+    await supabase.auth.updateUser({ data: { avatar_url: publicUrl } })
+
+    setAvatarUrl(publicUrl)
+    toast.success("Avatar updated!")
+    setUploading(false)
+  }
 
   const onSubmit: SubmitHandler<AccountFormValues> = async (data) => {
     setServerError(null)
     setSuccessMsg(null)
+
+    if (!user) {
+      setServerError("You must be signed in to update account details")
+      return
+    }
 
     if (data.oldPassword) {
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -92,9 +159,11 @@ const AccountPage = () => {
       }
     }
 
+    const fullName = `${data.firstName} ${data.lastName}`.trim()
+
     const { error: metadataError } = await supabase.auth.updateUser({
       data: {
-        full_name: `${data.firstName} ${data.lastName}`.trim(),
+        full_name: fullName,
         display_name: data.displayName,
       },
     })
@@ -103,11 +172,24 @@ const AccountPage = () => {
       setServerError(metadataError.message)
       return
     }
-    alert("Account updated successfully")
+
+    const { error: profileError } = await supabase.from("profiles").upsert({
+      id: user.id,
+      full_name: fullName,
+      display_name: data.displayName,
+    })
+
+    if (profileError) {
+      console.error("Profile sync error:", profileError.message)
+      setServerError("Failed to sync profile. Changes saved to auth but not synced to profile.")
+      return
+    }
+
+    toast.success("Account updated successfully")
     setSuccessMsg("Account updated successfully")
   }
 
-  if (!user) return <p className="text-center">Loading...</p>
+  if (loading || !user) return <AccountSkeleton />
 
   return (
     <div className="w-full">
@@ -191,7 +273,7 @@ const AccountPage = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="max-w-lg mt-3 bg-black text-white px-9 py-4 rounded-lg"
+              className="max-w-lg mt-3 bg-black text-white px-9 py-2.5 rounded-lg"
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </button>
