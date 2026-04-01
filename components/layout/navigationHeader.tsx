@@ -16,12 +16,15 @@ const navigationHeader = () => {
     <>
       {isVisible && (
         <div className="relative gap-2 w-full h-10 font-inter flex justify-center items-center py-2 bg-gray-100 text-[12px] md:text-[16px]">
-          <LuTicketPercent className="text-xl md:text-2xl"/>
-          <p className="font-bold text-[12px] md:text-[16px] text-[#343839]">
+          <LuTicketPercent className="text-xl md:text-2xl" />
+          <p className="font-bold text-[10px] md:text-[16px] text-[#343839]">
             30% off storewide — Limited time!
           </p>
-        <Link href="/shop" className="font-inter h-[10px] md:h-[20px] flex items-center text-blue-500 hover:border-b-2">Shop Now <LuArrowRight /></Link>
-          <RxCross2 onClick={handleClose} className="absolute mx-4 right-0 sm:w-5 sm:h-5 cursor-pointer" />
+          <div className="flex items-center justify-center">
+            <Link href="/shop" className="hidden md:block font-inter text-blue-500 hover:border-b-2">Shop Now</Link>
+            <LuArrowRight className="hidden md:block text-blue-500"/>
+          </div>
+          <RxCross2 onClick={handleClose} className="absolute mx-2 md:mx-4 right-0 sm:w-5 sm:h-5 cursor-pointer" />
         </div>
       )}
     </>

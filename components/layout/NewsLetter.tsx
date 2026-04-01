@@ -1,6 +1,5 @@
 "use client"
 
-import React from "react"
 import drawer from "../../app/assets/images/drawer_2.jpg"
 import chair from "../../app/assets/images/chair_2.jpg"
 import { AiOutlineMail } from "react-icons/ai"

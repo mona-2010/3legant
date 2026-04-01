@@ -1,7 +1,12 @@
+"use client"
+
+import { useState } from "react"
+import { useForm } from "react-hook-form"
 import { BiLocationPlus } from 'react-icons/bi';
 import { FiPhone } from 'react-icons/fi';
 import { HiOutlineMail } from 'react-icons/hi';
 import { IoHomeOutline } from 'react-icons/io5';
+import { submitContactMessage } from "@/lib/actions/contact";
 
 const values = [
     { icon: <IoHomeOutline />, title: "Address", desc: "234 Hai Trieu, Ho Chi Minh City, Viet Nam" },
@@ -9,7 +14,42 @@ const values = [
     { icon: <HiOutlineMail />, title: "Email", desc: "hello@3legant.com" },
 ];
 
+type ContactFormValues = {
+    fullName: string
+    email: string
+    message: string
+}
+
 const ContactForm = () => {
+    const [serverError, setServerError] = useState<string | null>(null)
+    const [submitted, setSubmitted] = useState(false)
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<ContactFormValues>({
+        defaultValues: {
+            fullName: "",
+            email: "",
+            message: "",
+        },
+    })
+
+    const onSubmit = async (values: ContactFormValues) => {
+        setServerError(null)
+        setSubmitted(false)
+
+        const result = await submitContactMessage(values)
+        if (result.error) {
+            setServerError(result.error)
+            return
+        }
+
+        reset()
+        setSubmitted(true)
+    }
+
     return (
         <>
             <h1 className='font-poppins font-medium text-[40px] text-center leading-[44px]'>Contact Us</h1>
@@ -29,31 +69,63 @@ const ContactForm = () => {
                 ))}
             </div>
             <div className='flex flex-col md:flex-row justify-center gap-10 my-10'>
-                <form action="" className='w-full md:w-1/2'>
+                <form onSubmit={handleSubmit(onSubmit)} className='w-full md:w-1/2'>
                     <div className='flex flex-col gap-3'>
                         <label htmlFor="fullname" className='font-[600] uppercase text-gray-200'>Full Name</label>
                         <input
                             type="text"
-                            name='fullname'
+                            id='fullname'
                             placeholder="Your Name"
                             className='border border-lightgray rounded-md px-4 py-3 mb-3'
+                            {...register("fullName", {
+                                required: "Full name is required",
+                                minLength: {
+                                    value: 2,
+                                    message: "Full name must be at least 2 characters",
+                                },
+                            })}
                         />
+                        {errors.fullName && <p className='text-red-600 text-sm -mt-2 mb-2'>{errors.fullName.message}</p>}
                         <label htmlFor="email" className='font-[600] uppercase text-gray-200'>Email Address</label>
                         <input
-                            type="text"
-                            name='email'
+                            type="email"
+                            id='email'
                             placeholder="Your Email"
                             className='border border-lightgray rounded-md px-4 py-3 mb-3'
+                            {...register("email", {
+                                required: "Email is required",
+                                pattern: {
+                                    value: /^\S+@\S+\.\S+$/,
+                                    message: "Please enter a valid email address",
+                                },
+                            })}
                         />
+                        {errors.email && <p className='text-red-600 text-sm -mt-2 mb-2'>{errors.email.message}</p>}
                         <label htmlFor="message" className='font-[600] uppercase text-gray-200'>Message</label>
                         <textarea
-                            name='message'
+                            id='message'
                             placeholder="Your Message"
                             rows={8}
                             className='border border-lightgray rounded-md px-4 py-2 mb-3'
+                            {...register("message", {
+                                required: "Message is required",
+                                minLength: {
+                                    value: 10,
+                                    message: "Message must be at least 10 characters",
+                                },
+                            })}
                         />
+                        {errors.message && <p className='text-red-600 text-sm -mt-2 mb-2'>{errors.message.message}</p>}
                     </div>
-                    <button className='text-center rounded-[8px] mt-6 py-[10px] px-[40px] bg-[#141718] text-white'>Send Message</button>
+                    {serverError && <p className='text-red-600 text-sm mt-2'>{serverError}</p>}
+                    {submitted && <p className='text-green-700 text-sm mt-2'>Thanks for contacting us. We will get back to you soon.</p>}
+                    <button
+                        type='submit'
+                        disabled={isSubmitting}
+                        className='text-center rounded-[8px] mt-6 py-[10px] px-[40px] bg-[#141718] text-white disabled:opacity-60 disabled:cursor-not-allowed'
+                    >
+                        {isSubmitting ? "Sending..." : "Send Message"}
+                    </button>
                 </form>
                 <div className="relative w-full md:w-1/2 h-[50vh] md:h-[550px]">
 

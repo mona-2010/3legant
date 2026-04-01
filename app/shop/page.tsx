@@ -1,9 +1,9 @@
 import ShopPage from '@/components/ui/ShopPage'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 const Shop = () => {
   return (
-    <div><ShopPage/></div>
+    <ShopPage />
   )
 }
 

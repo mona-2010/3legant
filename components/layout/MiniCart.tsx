@@ -1,20 +1,16 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { RxCross2 } from "react-icons/rx"
-import { useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { RootState, AppDispatch } from "@/store/store"
 import {
-  setCart,
   increaseQty,
   decreaseQty,
-  removeFromCart,
-  clearCart
+  removeFromCart
 } from "@/store/cartSlice"
-import { createClient } from "@/lib/supabase/client"
-import { fetchCart } from "@/lib/cart/fetchCart"
+import { removeCartItem, updateCartItemQuantity } from "@/lib/cart/mutations"
+import TintedProductImage from "./TintedProductImage"
 
 interface Props {
   cartOpen: boolean
@@ -22,36 +18,10 @@ interface Props {
 }
 
 export default function CartPopup({ cartOpen, setCartOpen }: Props) {
-  const supabase = createClient()
   const dispatch = useDispatch<AppDispatch>()
 
   const cartItems = useSelector((state: RootState) => state.cart.items)
   const shippingMethod = useSelector((state: RootState) => state.cart.shippingMethod)
-
-  useEffect(() => {
-    const loadCart = async () => {
-      const items = await fetchCart()
-      dispatch(setCart(items))
-    }
-    loadCart()
-
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange(async (event) => {
-
-      if (event === "SIGNED_OUT") {
-        dispatch(clearCart())
-      }
-
-      if (event === "SIGNED_IN") {
-        const items = await fetchCart()
-        dispatch(setCart(items))
-      }
-
-    })
-    return () => subscription.unsubscribe()
-
-  }, [])
 
   const updateQuantity = async (id: string, type: "inc" | "dec") => {
 
@@ -62,27 +32,22 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
       ? item.quantity + 1
       : item.quantity - 1
 
-    if (newQty <= 0) {
-      removeItem(id)
+    if (type === "inc" && typeof item.stock === "number" && newQty > item.stock) {
       return
     }
 
-    await supabase
-      .from("cart")
-      .update({ quantity: newQty })
-      .eq("id", id)
+    if (type === "dec" && item.quantity <= 1) {
+      return
+    }
+
+    await updateCartItemQuantity(id, newQty)
 
     if (type === "inc") dispatch(increaseQty(id))
     else dispatch(decreaseQty(id))
   }
 
   const removeItem = async (id: string) => {
-
-    await supabase
-      .from("cart")
-      .delete()
-      .eq("id", id)
-
+    await removeCartItem(id)
     dispatch(removeFromCart(id))
   }
 
@@ -137,13 +102,14 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
                 className="flex items-start gap-4 border-b pb-6"
               >
 
-                <div className="w-[80px] h-[96px] bg-gray-100 relative flex-shrink-0">
-                  <Image
+                <div className="w-[80px] h-[96px] relative flex-shrink-0">
+                  <TintedProductImage
                     src={item.image}
                     alt={item.name}
                     fill
+                    colorHex={item.color}
                     sizes="80px"
-                    className="object-cover"
+                    className="object-contain mix-blend-multiply"
                   />
                 </div>
 
@@ -165,11 +131,23 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
                   </div>
                   <div className="flex justify-between items-center mt-4">
                     <div className="flex items-center border rounded-md px-3 py-1">
-                      <button onClick={() => updateQuantity(item.id, "dec")}>−</button>
+                      <button
+                        onClick={() => updateQuantity(item.id, "dec")}
+                        disabled={item.quantity <= 1}
+                        className={item.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""}
+                      >
+                        −
+                      </button>
                       <span className="mx-4 text-[14px]">
                         {item.quantity}
                       </span>
-                      <button onClick={() => updateQuantity(item.id, "inc")}>+</button>
+                      <button
+                        onClick={() => updateQuantity(item.id, "inc")}
+                        disabled={typeof item.stock === "number" && item.quantity >= item.stock}
+                        className={typeof item.stock === "number" && item.quantity >= item.stock ? "opacity-50 cursor-not-allowed" : ""}
+                      >
+                        +
+                      </button>
                     </div>
                     <RxCross2
                       onClick={() => removeItem(item.id)}
@@ -202,7 +180,7 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
           </div>
 
           <Link
-            href="/cart"
+            href="/cart/checkout"
             className="block w-full text-center bg-black text-white py-3 rounded-lg font-medium"
             onClick={() => setCartOpen(false)}
           >

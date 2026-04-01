@@ -1,18 +1,20 @@
 "use client"
 import { BsGridFill, BsGrid3X3GapFill } from "react-icons/bs"
-import { IoGridSharp } from "react-icons/io5"
 import { MdViewAgenda } from "react-icons/md"
+import { CategoryFilter, getCategoryLabel } from "./FilterBar"
+import { PiColumnsFill } from "react-icons/pi"
+
 type Props = {
     setGrid: (value: string) => void
     grid: string
     setSort: (value: string) => void
-    selectedCategory: string
+    selectedCategory: CategoryFilter
 }
 
 const SortBar = ({ setGrid, grid, setSort, selectedCategory }: Props) => {
     return (
-        <div className="flex flex-col items-start md:flex-row justify-between items-center mb-8">
-            <div className="text-lg font-semibold">{selectedCategory}</div>
+        <div className="flex flex-col items-start md:flex-row justify-between items-center">
+            <div className="text-lg font-semibold">{getCategoryLabel(selectedCategory)}</div>
             <div className="flex items-center gap-1 md:gap-5">
                 <div className="relative">
                     <select
@@ -37,7 +39,7 @@ const SortBar = ({ setGrid, grid, setSort, selectedCategory }: Props) => {
                         className={`hidden sm:hidden md:block cursor-pointer p-1 ${grid === "4" ? "bg-lightgray" : "text-gray-500"}`}
                     />
 
-                    <IoGridSharp
+                    <PiColumnsFill
                         onClick={() => setGrid("2")}
                         className={`cursor-pointer p-1 ${grid === "2" ? "bg-lightgray" : "text-gray-500"}`}
                     />

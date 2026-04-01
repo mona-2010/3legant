@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useForm, SubmitHandler } from "react-hook-form"
 import { createClient } from "@/lib/supabase/client"
+import { updateUserProfile, uploadAvatarAndUpdateProfile } from "@/lib/actions/profile"
+import { v4 as uuidv4 } from "uuid"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { toast } from "react-toastify"
@@ -35,17 +37,7 @@ const AccountPage = () => {
     handleSubmit,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<AccountFormValues>({
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      displayName: "",
-      email: "",
-      oldPassword: "",
-      newPassword: "",
-      repeatPassword: "",
-    }
-  })
+  } = useForm<AccountFormValues>()
 
   useEffect(() => {
     if (loading) return
@@ -56,16 +48,11 @@ const AccountPage = () => {
 
     const fetchProfile = async () => {
       try {
-        const { data: profile, error } = await supabase
+        const { data: profile } = await supabase
           .from("profiles")
           .select("full_name, avatar_url")
           .eq("id", user.id)
           .single()
-
-        if (error && error.code !== "PGRST116") {
-          console.error("Error fetching profile:", error)
-          return
-        }
 
         const fullName = profile?.full_name || user.user_metadata?.full_name || ""
         const [firstName, ...lastParts] = fullName.split(" ")
@@ -86,11 +73,19 @@ const AccountPage = () => {
     }
 
     fetchProfile()
-  }, [loading, user])
+  }, [loading, router, setValue, supabase, user])
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !user) return
+    if (!file) {
+      console.warn("No file selected")
+      return
+    }
+    if (!user) {
+      console.error("User not authenticated")
+      toast.error("You must be logged in to upload an avatar")
+      return
+    }
 
     const maxSize = 2 * 1024 * 1024 // 2MB
     if (file.size > maxSize) {
@@ -99,28 +94,45 @@ const AccountPage = () => {
     }
 
     setUploading(true)
+    
     const ext = file.name.split(".").pop()
-    const filePath = `${user.id}/avatar.${ext}`
+    const fileName = `${user.id}-${uuidv4()}.${ext}`
+    const filePath = `${user.id}/${fileName}`
 
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true })
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true })
 
-    if (uploadError) {
-      toast.error("Failed to upload avatar")
+      if (uploadError) {
+        toast.error(`Failed to upload avatar: ${uploadError.message}`)
+        setUploading(false)
+        return
+      }
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath)
+      const publicUrl = urlData.publicUrl
+      const result = await uploadAvatarAndUpdateProfile(publicUrl)
+
+      if (!result.success) {
+        console.error("Profile update failed:", result.error)
+        toast.error(result.error || "Failed to update avatar")
+        setUploading(false)
+        return
+      }
+
+      setAvatarUrl(publicUrl)
+      toast.success("Avatar updated!")
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
       setUploading(false)
-      return
+    } catch (err) {
+      toast.error("An unexpected error occurred during upload")
+      setUploading(false)
     }
-
-    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath)
-    const publicUrl = urlData.publicUrl
-
-    await supabase.from("profiles").upsert({ id: user.id, avatar_url: publicUrl })
-    await supabase.auth.updateUser({ data: { avatar_url: publicUrl } })
-
-    setAvatarUrl(publicUrl)
-    toast.success("Avatar updated!")
-    setUploading(false)
   }
 
   const onSubmit: SubmitHandler<AccountFormValues> = async (data) => {
@@ -161,27 +173,13 @@ const AccountPage = () => {
 
     const fullName = `${data.firstName} ${data.lastName}`.trim()
 
-    const { error: metadataError } = await supabase.auth.updateUser({
-      data: {
-        full_name: fullName,
-        display_name: data.displayName,
-      },
+    const result = await updateUserProfile({
+      fullName,
+      displayName: data.displayName,
     })
 
-    if (metadataError) {
-      setServerError(metadataError.message)
-      return
-    }
-
-    const { error: profileError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      full_name: fullName,
-      display_name: data.displayName,
-    })
-
-    if (profileError) {
-      console.error("Profile sync error:", profileError.message)
-      setServerError("Failed to sync profile. Changes saved to auth but not synced to profile.")
+    if (!result.success) {
+      setServerError(result.error || "Failed to update profile")
       return
     }
 
@@ -244,6 +242,7 @@ const AccountPage = () => {
               <label htmlFor="fullname" className='font-[600] uppercase text-gray-200 text-[14px]'>Old Password</label>
               <input
                 type="password"
+                autoComplete="current-password"
                 className="custom-input w-full border-2 rounded-md mt-2 p-2 border-gray-300 focus:outline-none"
                 {...register("oldPassword")}
               />
@@ -253,6 +252,7 @@ const AccountPage = () => {
               <label htmlFor="fullname" className='font-[600] uppercase text-gray-200 text-[14px]'>New Password</label>
               <input
                 type="password"
+                autoComplete="new-password"
                 className="custom-input w-full border-2 rounded-md mt-2 p-2 border-gray-300 focus:outline-none"
                 {...register("newPassword")}
               />
@@ -262,6 +262,7 @@ const AccountPage = () => {
               <label htmlFor="fullname" className='font-[600] uppercase text-gray-200 text-[14px]'>Repeat New Password</label>
               <input
                 type="password"
+                autoComplete="new-password"
                 className="custom-input w-full border-2 rounded-md mt-2 p-2 border-gray-300 focus:outline-none"
                 {...register("repeatPassword")}
               />

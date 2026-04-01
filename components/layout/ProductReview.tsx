@@ -1,241 +1,261 @@
 "use client"
-import Image, { StaticImageData } from "next/image"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { StarRating } from "./ProductSlider"
-import avatar from '@/app/assets/images/avatar.png'
-import FAQAccordion, { FAQItem } from "@/components/layout/FaqAccordion";
+import {
+    getReviews,
+    createReview,
+    updateReview,
+    deleteReview,
+    toggleReviewLike,
+    createReviewReply,
+    deleteReviewReply,
+} from "@/lib/actions/reviews"
+import { Review } from "@/types"
+import { toast } from "react-toastify"
+import AdditionalInfoTab from "./product-review/AdditionalInfoTab"
+import QuestionsTab from "./product-review/QuestionsTab"
+import TabButton from "./product-review/TabButton"
+import ReviewEntry from "./product-review/ReviewEntry"
+import ReviewForm from "./product-review/ReviewForm"
+import ReviewHeader from "./product-review/ReviewHeader"
+import ReviewItem from "./product-review/ReviewItem"
+import { TabKey, reviewLabel } from "./product-review/helpers"
+import { useAuth } from "@/components/providers/AuthProvider"
 
-type Review = {
-    id: number
-    name: string
-    avatar: StaticImageData
-    rating: number
-    text: string
-    date: string
+interface ProductReviewsProps {
+    productId: string
+    productTitle: string
+    shortDescription?: string
+    measurements?: string | null
+    weight?: string | null
 }
-export const furnitureFAQs: FAQItem[] = [
-    {
-        question: "What materials are used in your furniture?",
-        answer:
-            "Our furniture is made from high-quality solid wood, engineered wood, metal, and premium fabrics to ensure durability and style.",
-    },
-    {
-        question: "Do you offer customization options?",
-        answer:
-            "Yes, selected furniture pieces can be customized in size, fabric, color, and finish to match your interior design.",
-    },
-    {
-        question: "How long does delivery take?",
-        answer:
-            "Delivery usually takes between 5–10 business days depending on your location and product availability.",
-    },
-    {
-        question: "Do you provide furniture installation?",
-        answer:
-            "Yes, we provide professional installation services for certain furniture items to ensure proper setup.",
-    },
-    {
-        question: "What is your return policy?",
-        answer:
-            "We offer a 7-day return or replacement policy for damaged or defective products.",
-    },
-];
 
-const reviews: Review[] = [
-    {
-        id: 1,
-        name: "Sofia Harvetz",
-        avatar: avatar,
-        rating: 1,
-        date: "2 weeks ago",
-        text: "I bought it 3 weeks ago and now come back just to say 'Awesome Product'. I really enjoy it.",
-    },
-    {
-        id: 2,
-        name: "Nicolas Jensen",
-        avatar: avatar,
-        rating: 3,
-        date: "3 weeks ago",
-        text: "I bought it 3 weeks ago and now come back just to say 'Awesome Product'. I really enjoy it.",
-    },
-    {
-        id: 3,
-        name: "Dwight Howard",
-        avatar: avatar,
-        rating: 5,
-        date: "4 weeks ago",
-        text: "I bought it 3 weeks ago and now come back just to say 'Awesome Product'. I really enjoy it.",
-    },
-
-    {
-        id: 4,
-        name: "Jimmy Butler",
-        avatar: avatar,
-        rating: 2,
-        date: "5 weeks ago",
-        text: "I bought it 3 weeks ago and now come back just to say 'Awesome Product'. I really enjoy it.",
-    },
-    {
-        id: 5,
-        name: "Pam Halpert",
-        avatar: avatar,
-        rating: 4,
-        date: "1 weeks ago",
-        text: "I bought it 3 weeks ago and now come back just to say 'Awesome Product'. I really enjoy it.",
-    },
-]
-
-
-const ProductReviews = () => {
-    const [activeTab, setActiveTab] = useState("reviews")
+const ProductReviews = ({ productId, productTitle, shortDescription, measurements, weight }: ProductReviewsProps) => {
+    const [activeTab, setActiveTab] = useState<TabKey>("reviews")
     const [sortBy, setSortBy] = useState("newest")
     const [visibleCount, setVisibleCount] = useState(2)
-    const sortedReviews = [...reviews].sort((a, b) => {
-        if (sortBy === "newest") {
-            return new Date(a.date).getTime() - new Date(b.date).getTime()
+    const [reviews, setReviews] = useState<Review[]>([])
+    const [loading, setLoading] = useState(true)
+    const [submitting, setSubmitting] = useState(false)
+    const [reviewText, setReviewText] = useState("")
+    const [reviewRating, setReviewRating] = useState(0)
+    const [showForm, setShowForm] = useState(false)
+    const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
+    const { user } = useAuth()
+    const userId = user?.id ?? null
+
+    const loadReviews = useCallback(async () => {
+        setLoading(true)
+        const { data } = await getReviews(productId, sortBy)
+        if (data) setReviews(data)
+        setLoading(false)
+    }, [productId, sortBy])
+
+    useEffect(() => {
+        loadReviews()
+    }, [loadReviews])
+
+    const avgRating = reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : 0
+
+    const startEditingReview = (review: Review) => {
+        setEditingReviewId(review.id)
+        setReviewText(review.text)
+        setReviewRating(review.rating)
+        setShowForm(true)
+    }
+
+    const resetReviewForm = () => {
+        setShowForm(false)
+        setEditingReviewId(null)
+        setReviewText("")
+        setReviewRating(0)
+    }
+
+    const handleSubmitReview = async () => {
+        if (!reviewText.trim()) {
+            toast.error("Please write your review")
+            return
+        }
+        if (reviewRating === 0) {
+            toast.error("Please select a rating")
+            return
         }
 
-        if (sortBy === "oldest") {
-            return new Date(b.date).getTime() - new Date(a.date).getTime()
+        setSubmitting(true)
+        const { error } = editingReviewId
+            ? await updateReview({
+                id: editingReviewId,
+                rating: reviewRating,
+                text: reviewText.trim(),
+            })
+            : await createReview({
+                product_id: productId,
+                rating: reviewRating,
+                text: reviewText.trim(),
+            })
+        setSubmitting(false)
+
+        if (error) {
+            toast.error(error)
+            return
         }
 
-        if (sortBy === "highest") {
-            return b.rating - a.rating
+        toast.success(editingReviewId ? "Review updated!" : "Review submitted!")
+        resetReviewForm()
+        loadReviews()
+    }
+
+    const handleDeleteReview = async (reviewId: string) => {
+        const { error } = await deleteReview(reviewId)
+        if (error) {
+            toast.error(error)
+            return
+        }
+        toast.success("Review deleted")
+        loadReviews()
+    }
+
+    const handleToggleLike = async (reviewId: string) => {
+        if (!userId) {
+            toast.error("Please sign in to like a review")
+            return
         }
 
-        if (sortBy === "lowest") {
-            return a.rating - b.rating
+        const { error } = await toggleReviewLike(reviewId)
+        if (error) {
+            toast.error(error)
+            return
         }
 
-        return 0
-    })
+        loadReviews()
+    }
 
-    const visibleReview = sortedReviews.slice(0, visibleCount)
+    const handleAddReply = async (reviewId: string, text: string) => {
+        if (!userId) {
+            toast.error("Please sign in to reply")
+            return false
+        }
+
+        const { error } = await createReviewReply({ review_id: reviewId, text })
+        if (error) {
+            toast.error(error)
+            return false
+        }
+
+        toast.success("Reply added")
+        await loadReviews()
+        return true
+    }
+
+    const handleDeleteReply = async (replyId: string) => {
+        const { error } = await deleteReviewReply(replyId)
+        if (error) {
+            toast.error(error)
+            return
+        }
+
+        toast.success("Reply deleted")
+        await loadReviews()
+    }
+
+    const visibleReviews = reviews.slice(0, visibleCount)
+
     return (
         <div className="mt-20">
-            <div className="flex gap-8 border-b border-lightgray pb-4 text-gray-500 text-sm font-medium">
-                <button
-                    onClick={() => setActiveTab("info")}
-                    className={activeTab === "info" ? "text-black border-b-2 border-transparent border-black" : ""}
-                >
-                    Additional Info
-                </button>
-
-                <button
-                    onClick={() => setActiveTab("questions")}
-                    className={activeTab === "questions" ? "text-black border-b-2 border-transparent border-black" : ""}
-                >
-                    Questions
-                </button>
-
-                <button
-                    onClick={() => setActiveTab("reviews")}
-                    className={activeTab === "reviews" ? "text-black border-b-2 border-transparent border-black " : ""}
-                >
-                    Reviews
-                </button>
+            <div className="flex flex-col md:flex-row items-start gap-8 border-b border-lightgray pb-4 text-gray-500 text-sm font-medium">
+                <TabButton tab="info" activeTab={activeTab} onClick={setActiveTab} label="Additional Info" />
+                <TabButton tab="questions" activeTab={activeTab} onClick={setActiveTab} label="Questions" />
+                <TabButton tab="reviews" activeTab={activeTab} onClick={setActiveTab} label="Reviews" />
             </div>
+
             {activeTab === "info" && (
-                <div className="mt-10">
-                    <h2 className="font-poppins text-2xl font-[500]">Additional Information</h2>
-                    <h3 className="font-[600] text-gray-200">Details</h3>
-                    <p>You can use the removable tray for serving. The design makes it easy to put the tray back after use since you place it directly on the table frame without having to fit it into any holes.</p>
-                    <h3 className="font-[600] text-gray-200">Packaging</h3>
-                    <p>Width: 20 " Height: 1 ½ " Length: 21 ½ "
-                        Weight: 7 lb 8 oz
-                        Package(s): 1
-                    </p>
-                </div>
-            )
-            }
+                <AdditionalInfoTab
+                    shortDescription={shortDescription}
+                    measurements={measurements}
+                    weight={weight}
+                />
+            )}
 
             {activeTab === "questions" && (
-                <div className="mt-10">
-                    <h2 className="font-poppins text-2xl font-[500]">Questions</h2>
-                    <FAQAccordion faqs={furnitureFAQs} />
-                </div>
-            )
-            }
+                <QuestionsTab />
+            )}
+
             {activeTab === "reviews" && (
                 <div className="mt-10">
                     <h2 className="font-poppins text-2xl font-[500]">Customer Reviews</h2>
                     <div className="flex items-center gap-3 mt-3">
-                        <StarRating rating={4.5} />
-                        <p className="text-gray-600 text-sm">11 Reviews</p>
+                        <StarRating rating={Math.round(avgRating * 2) / 2} />
+                        <p className="text-gray-600 text-sm">{reviewLabel(reviews.length)}</p>
                     </div>
 
-                    <p className="mt-2">Tray Table</p>
-                    <div className="mt-8 flex w-full items-center border-2 border-gray-200 rounded-md font-inter font-medium text-black h-[65px] max-lg:w-[400px] max-sm:mx-auto max-sm:w-[90%]"
-                    >
-                        <div className="flex items-center w-full">
-                            <input
-                                type="text"
-                                name="text"
-                                placeholder="Share your thoughts"
-                                className="pl-5 w-full bg-transparent focus:outline-none"
-                            />
-                        </div>
+                    <p className="mt-2">{productTitle}</p>
 
-                        <button className="capitalize mr-2 md:mr-4 bg-black text-white w-[150px] md:w-[176px] rounded-full px-5 py-1 md:py-2">
-                            write review
-                        </button>
-                    </div>
+                    {!showForm ? (
+                        <ReviewEntry
+                            userId={userId}
+                            reviews={reviews}
+                            onStartEditingReview={startEditingReview}
+                            onShowForm={() => setShowForm(true)}
+                        />
+                    ) : (
+                        <ReviewForm
+                            reviewRating={reviewRating}
+                            setReviewRating={setReviewRating}
+                            reviewText={reviewText}
+                            setReviewText={setReviewText}
+                            submitting={submitting}
+                            editingReviewId={editingReviewId}
+                            onSubmit={handleSubmitReview}
+                            onCancel={resetReviewForm}
+                        />
+                    )}
 
-                    <div className="flex justify-between items-center mt-10">
-                        <h3 className="font-poppins text-[28px] font-[500]">11 Reviews</h3>
+                    <ReviewHeader
+                        totalReviews={reviews.length}
+                        sortBy={sortBy}
+                        onSortByChange={(value) => {
+                            setSortBy(value)
+                            setVisibleCount(2)
+                        }}
+                    />
 
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="border border-lightgray px-2 py-2 rounded-md text-sm"
-                        >
-                            <option value="newest">Newest</option>
-                            <option value="oldest">Oldest</option>
-                            <option value="highest">Highest Rating</option>
-                            <option value="lowest">Lowest Rating</option>
-                        </select>
-                    </div>
-
-                    <div className="mt-10 space-y-10">
-                        {visibleReview.map((review) => (
-                            <div key={review.id} className="flex gap-4 border-b border-lightgray pb-8">
-                                <Image
-                                    src={review.avatar}
-                                    alt={review.name}
-                                    className=" w-15 h-15 rounded-full"
+                    {loading ? (
+                        <p className="mt-10 text-gray-500">Loading reviews...</p>
+                    ) : reviews.length === 0 ? (
+                        <p className="mt-10 text-gray-500">No reviews yet. Be the first to review this product!</p>
+                    ) : (
+                        <div className="mt-10 space-y-10">
+                            {visibleReviews.map((review) => (
+                                <ReviewItem
+                                    key={review.id}
+                                    review={review}
+                                    userId={userId}
+                                    isOwner={userId === review.user_id}
+                                    onEdit={startEditingReview}
+                                    onDelete={handleDeleteReview}
+                                    onToggleLike={handleToggleLike}
+                                    onAddReply={handleAddReply}
+                                    onDeleteReply={handleDeleteReply}
                                 />
+                            ))}
+                        </div>
+                    )}
 
-                                <div className="flex-1">
-                                    <h4 className="font-semibold">{review.name}</h4>
-                                    <div className="flex items-center gap-3 mt-1">
-                                        <StarRating rating={review.rating} />
-                                    </div>
-
-                                    <p className="text-gray-600 mt-3 text-sm leading-relaxed">
-                                        {review.text}
-                                    </p>
-
-                                    <div className="flex gap-6 text-sm text-gray-500 mt-4">
-                                        <button>Like</button>
-                                        <button>Reply</button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
                     {visibleCount < reviews.length && (
                         <div className="flex justify-center mt-10">
-                            <button onClick={() =>
-                                setVisibleCount(reviews.length)}
-                                className="border px-8 py-3 rounded-full hover:bg-black hover:text-white transition">
+                            <button
+                                onClick={() => setVisibleCount(reviews.length)}
+                                className="border px-8 py-3 rounded-full hover:bg-black hover:text-white transition"
+                            >
                                 Load more
                             </button>
                         </div>
                     )}
                 </div>
-            )
-            }
-        </div >
+            )}
+        </div>
     )
 }
 

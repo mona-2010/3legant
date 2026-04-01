@@ -15,6 +15,16 @@ type SignUpFormValues = {
   agree: boolean
 }
 
+const mapSignUpErrorMessage = (message: string) => {
+  const normalized = message.toLowerCase()
+
+  if (normalized.includes("database error saving new user")) {
+    return "Sign-up is temporarily unavailable due to a server profile setup issue. Please try again in a minute or contact support if it continues."
+  }
+
+  return message
+}
+
 const SignupForm = () => {
   const supabase = createClient()
   const router = useRouter()
@@ -36,14 +46,17 @@ const SignupForm = () => {
       password: data.password,
       options: {
         data: {
+          name: data.name,
           full_name: data.name,
+          display_name: data.username,
           username: data.username,
+          user_name: data.username,
         },
       },
     })
 
     if (error) {
-      setServerError(error.message)
+      setServerError(mapSignUpErrorMessage(error.message))
       return
     }
 
@@ -66,58 +79,63 @@ const SignupForm = () => {
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="w-full mr-auto">
+        <div className="border-b border-lightgray py-2">
+          <input
+            className="custom-input w-full mb-2 focus:outline-none"
+            {...register("name", { required: "Name is required" })}
+            placeholder="Your name"
+          />
 
-        <label>Your name</label>
-        <input
-          className="custom-input w-full border-b border-lightgray mb-5 focus:outline-none"
-          {...register("name", { required: "Name is required" })}
-        />
-        {errors.name && (
-          <p className="text-red-500 text-sm mb-4">
-            {errors.name.message}
-          </p>
-        )}
+          {errors.name && (
+            <p className="text-red-500 text-sm mb-4">
+              {errors.name.message}
+            </p>
+          )}
+        </div>
 
-        <label>Username</label>
-        <input
-          className="custom-input w-full border-b border-lightgray mb-5 focus:outline-none"
-          {...register("username", {
-            required: "Username is required",
-            minLength: {
-              value: 3,
-              message: "Username must be at least 3 characters",
-            },
-          })}
-        />
-        {errors.username && (
-          <p className="text-red-500 text-sm mb-4">
-            {errors.username.message}
-          </p>
-        )}
+        <div className="border-b border-lightgray py-2">
+          <input
+            className="custom-input w-full mb-2 focus:outline-none"
+            {...register("username", {
+              required: "Username is required",
+              minLength: {
+                value: 3,
+                message: "Username must be at least 3 characters",
+              },
+            })}
+            placeholder="Username"
+          />
+          {errors.username && (
+            <p className="text-red-500 text-sm mb-4">
+              {errors.username.message}
+            </p>
+          )}
+        </div>
 
-        <label>Email Address</label>
-        <input
-          type="email"
-          className="custom-input w-full border-b border-lightgray mb-5 focus:outline-none"
-          {...register("email", {
-            required: "Email is required",
-            pattern: {
-              value: /^\S+@\S+$/i,
-              message: "Invalid email address",
-            },
-          })}
-        />
-        {errors.email && (
-          <p className="text-red-500 text-sm mb-4">
-            {errors.email.message}
-          </p>
-        )}
+        <div className="border-b border-lightgray py-2">
+          <input
+            type="email"
+            className="custom-input w-full mb-2 focus:outline-none"
+            {...register("email", {
+              required: "Email is required",
+              pattern: {
+                value: /^\S+@\S+$/i,
+                message: "Invalid email address",
+              },
+            })}
+            placeholder="Email address"
+          />
+          {errors.email && (
+            <p className="text-red-500 text-sm mb-4">
+              {errors.email.message}
+            </p>
+          )}
+        </div>
 
-        <label>Password</label>
-        <div className="flex border-b border-lightgray items-center mb-5 focus:outline-none">
+        <div className="flex border-b border-lightgray items-center mb-5 py-2 focus:outline-none">
           <input
             type={showPassword ? "text" : "password"}
-            className="custom-input w-full"
+            className="custom-input w-full mb-2 focus:outline-none"
             {...register("password", {
               required: "Password is required",
               minLength: {
@@ -125,6 +143,7 @@ const SignupForm = () => {
                 message: "Password must be at least 6 characters",
               },
             })}
+            placeholder="Password"
           />
           <button
             type="button"

@@ -15,7 +15,7 @@ type BreadcrumbProps = {
 
 export default function Breadcrumb({ currentPage, crumbs = [] }: BreadcrumbProps) {
   return (
-    <nav className="flex items-center gap-2 text-[16px] leading-[18px] tracking-[0.01em] font-medium">
+    <nav className="font-inter flex items-center flex-wrap gap-2 text-[14px] leading-[18px] tracking-[0.01em] font-medium">
       <Link
         className="text-[#605F5F] hover:text-baseblack transition-all"
         href="/"
@@ -28,7 +28,7 @@ export default function Breadcrumb({ currentPage, crumbs = [] }: BreadcrumbProps
           <RiArrowRightSLine />
           <Link
             href={crumb.href}
-            className="text-[#605F5F] hover:text-baseblack transition-all"
+            className="text-[#605F5F] hover:text-baseblack transition-all capitalize"
           >
             {crumb.title}
           </Link>

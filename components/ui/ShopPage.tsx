@@ -1,62 +1,59 @@
 "use client"
 import { useState, useMemo, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import Breadcrumb from "../BreadCrumb"
 import { Header, NavigationHeader } from "../dynamicComponents"
 import shopbg from "@/app/assets/images/shopbg.png"
-import FilterBar, { categories, prices } from "../layout/FilterBar"
+import FilterBar, { categoryFilters, CategoryFilter, getCategoryLabel, prices } from "../layout/FilterBar"
 import Newsletter from "../layout/NewsLetter"
 import Footer from "../layout/Footer"
 import ShopTopBar from "@/components/layout/SortBar"
 import ProductSlider from "@/components/layout/ProductSlider"
-import { createClient } from "@/lib/supabase/client"
+import { useProducts, ProductType } from "@/lib/hooks/useProducts"
+import ShopPageSkeleton from "../common/ShopPageSkeleton"
+import { isProductCategory, ProductCategory } from "@/types"
 
-interface ProductType {
-  id: string
-  title: string
-  description?: string
-  price: number
-  original_price?: number
-  image: string
-  rating?: number
-  category?: string[]
-  is_new?: boolean
-  created_at: string
+const normalizeCategoryParam = (value: string | null): CategoryFilter => {
+  if (!value) return "all"
+
+  if (value === "All Rooms") return "all"
+  if (isProductCategory(value)) return value
+
+  const slug = value.trim().toLowerCase().replace(/\s+/g, "_")
+  if (isProductCategory(slug)) return slug
+  return "all"
 }
 
 const ShopPage = () => {
+  const searchParams = useSearchParams()
+  const categoryParam = searchParams.get("category")
   const [grid, setGrid] = useState("3")
   const [sort, setSort] = useState("default")
   const [visibleCount, setVisibleCount] = useState(6)
-  const [selectedCategory, setSelectedCategory] = useState("All Rooms")
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>(normalizeCategoryParam(categoryParam))
   const [selectedPrices, setSelectedPrices] = useState<string[]>(["all"])
-  const [products, setProducts] = useState<ProductType[]>([])
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const { products, loading } = useProducts()
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-      if (!error && data) {
-        setProducts(data)
-      }
-      setLoading(false)
+    if (window.innerWidth < 768) {
+      setGrid("2")
     }
-
-    fetchProducts()
   }, [])
+
+  useEffect(() => {
+    setSelectedCategory(normalizeCategoryParam(categoryParam))
+  }, [categoryParam])
 
   useEffect(() => {
     setVisibleCount(6)
   }, [selectedCategory, selectedPrices, sort])
 
   const filteredProducts = useMemo(() => {
-    let filtered = [...products]
+    let filtered = products.filter((p) => p.is_active)
 
-    if (selectedCategory !== "All Rooms") {
+    if (selectedCategory !== "all") {
       filtered = filtered.filter(
-        (p) => Array.isArray(p.category) ? p.category.includes(selectedCategory) : p.category === selectedCategory
+        (p) => Array.isArray(p.category) && p.category.includes(selectedCategory)
       )
     }
 
@@ -93,25 +90,23 @@ const ShopPage = () => {
       <NavigationHeader />
       <Header />
       <div
-        className="mx-[30px] md:mx-[140px] flex justify-center items-center"
+        className="mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] flex justify-center items-center bg-cover min-h-[200px] lg:min-h-[400px] max-h-[392px]"
         style={{
-          backgroundImage: `url(${shopbg.src})`,
-          backgroundSize: "cover",
-          minHeight: "392px",
+          backgroundImage: `url(${shopbg.src})`
         }}
       >
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col w-full justify-center mx-auto items-center">
           <Breadcrumb currentPage="Shop" />
-          <h1 className="my-5 font-poppins text-[54px] font-[500]">
-            Shop Bag
+          <h1 className="my-5 font-poppins text-[24px] md:text-[36px] lg:text-[54px] font-[500]">
+            Shop Page
           </h1>
-          <p className="text-[20px] text-[#121212]">
+          <p className="text-center text-[12px] md:text-[16px] lg:text-[20px] text-[#121212]">
             Let’s design the place you always imagined.
           </p>
         </div>
       </div>
 
-      <div className="mx-[30px] md:mx-[140px] mt-16 flex flex-col lg:flex-row gap-12">
+      <div className="mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] mt-8 md:mt-12 lg:mt-16 flex flex-col lg:flex-row gap-12">
 
         {grid === "3" && (
           <div className="lg:w-[262px] w-full">
@@ -134,12 +129,12 @@ const ShopPage = () => {
 
                 <select
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="border px-2 py-2 rounded-md w-[262px]"
+                  onChange={(e) => setSelectedCategory(normalizeCategoryParam(e.target.value))}
+                  className="border px-2 py-2 rounded-md w-full md:w-[260px] lg:w-[262px]"
                 >
-                  {categories.map((category) => (
+                  {categoryFilters.map((category) => (
                     <option key={category} value={category}>
-                      {category}
+                      {getCategoryLabel(category)}
                     </option>
                   ))}
                 </select>
@@ -152,7 +147,7 @@ const ShopPage = () => {
                 <select
                   value={selectedPrices[0] || "all"}
                   onChange={(e) => setSelectedPrices([e.target.value])}
-                  className="border px-2 py-2 rounded-md w-[262px]"
+                  className="border px-2 py-2 rounded-md w-full md:w-[260px] lg:w-[262px]"
                 >
                   {prices.map((price) => (
                     <option key={price} value={price}>
@@ -176,7 +171,7 @@ const ShopPage = () => {
 
           <div>
             {loading ? (
-              <p>Loading...</p>
+              <ShopPageSkeleton />
             ) : (
               <ProductSlider
                 products={visibleProducts}
@@ -187,8 +182,8 @@ const ShopPage = () => {
           {visibleCount < filteredProducts.length && (
             <div className="flex justify-center mt-10">
               <button
-                onClick={() => setVisibleCount(filteredProducts.length)}
-                className="px-12 py-3 border border-black rounded-full hover:bg-black hover:text-white transition"
+                onClick={() => setVisibleCount((prev) => Math.min(prev + 6, filteredProducts.length))}
+                className="px-4 md:px-6 lg:px-8 py-3 border border-black rounded-full hover:bg-black hover:text-white transition"
               >
                 Show More
               </button>

@@ -10,7 +10,7 @@ type ButtonTextProps = {
 const ButtonText = ({ text, linkTo, heading }: ButtonTextProps) => {
     return (
         <div className="flex flex-col">
-            <h1 className="text-[28px] md:text-[34px] mb-2">{heading}</h1>
+            <h1 className="text-[20px] md:text-[25px] lg:text-[34px] mb-2">{heading}</h1>
             <div className="w-fit border-b border-black-shade-1 font-medium leading-[28px] max-sm:text-sm max-sm:leading-6 undefined"> 
                 <Link
                 href={`/${linkTo}`}

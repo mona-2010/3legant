@@ -21,7 +21,8 @@ const SignUp = () => {
                 >
                     3legant<span className="text-gray-200">.</span>
                 </Link>
-            </div><SignupForm />
+            </div>
+            <SignupForm />
         </section>
     )
 }

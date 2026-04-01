@@ -1,80 +1,172 @@
 "use client";
 
 import Image, { StaticImageData } from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { NewLabel } from "../layout/ProductSlider";
 
 interface Props {
   images: (string | StaticImageData)[];
   price: number;
+  valid_until?: string | null;
   originalPrice?: number;
+  colorHex?: string;
   isNew?: boolean;
 }
 
 export default function ProductImageGallery({
   images,
   price,
+  valid_until,
   originalPrice,
+  colorHex,
   isNew,
 }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [userPickedColor, setUserPickedColor] = useState(false);
+  const isMountedRef = useRef(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  const next = () => {
+  const hasImages = images.length > 0;
+  useEffect(() => {
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      return;
+    }
+    setUserPickedColor(!!colorHex);
+  }, [colorHex]);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [colorHex]);
+
+  const goNext = () => {
+    if (!hasImages) return;
     setActiveIndex((prev) => (prev + 1) % images.length);
   };
 
-  const prev = () => {
+  const goPrev = () => {
+    if (!hasImages) return;
     setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    if (isLeftSwipe) goNext();
+    if (isRightSwipe) goPrev();
+  };
+
+  const showTint = userPickedColor && !!colorHex && activeIndex === 0;
+
   return (
     <div className="flex flex-col gap-5 w-full">
-      <div className="relative w-full h-[600px] bg-gray-100 flex items-center justify-center">
-        <NewLabel price={price} originalPrice={originalPrice} isNew={isNew} />
+      <div
+        className="relative w-full h-[400px] sm:h-[520px] lg:h-[650px] bg-white flex items-center justify-center overflow-hidden touch-pan-y"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+
+        <NewLabel
+          price={price}
+          originalPrice={originalPrice}
+          validUntil={valid_until}
+          isNew={isNew}
+        />
 
         <button
-          onClick={prev}
+          onClick={goPrev}
+          disabled={!hasImages}
           className="absolute left-4 z-10 bg-white p-3 rounded-full shadow"
+          aria-label="Previous image"
         >
           <IoChevronBack />
         </button>
 
-        <Image
-          src={images[activeIndex]}
-          alt="Product"
-          fill
-          priority
-          className="object-cover"
-          sizes="527px"
-        />
+        {hasImages ? (
+          <>
+            <Image
+              src={images[activeIndex]}
+              alt="Product"
+              fill
+              priority
+              quality={95}
+              className="object-fit lg:object-contain mix-blend-multiply max-h-[400px] md:max-h-full"
+              sizes="(min-width: 1280px) 50vw, (min-width: 768px) 50vw, 100vw"
+            />
+
+            {showTint && (
+              <div
+                className="absolute inset-0 pointer-events-none transition-colors duration-300"
+                style={{
+                  backgroundColor: colorHex,
+                  mixBlendMode: "color",
+                }}
+                aria-hidden="true"
+              />
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-gray-500">No image available</p>
+        )}
 
         <button
-          onClick={next}
+          onClick={goNext}
+          disabled={!hasImages}
           className="absolute right-4 z-10 bg-white p-3 rounded-full shadow"
+          aria-label="Next image"
         >
           <IoChevronForward />
         </button>
       </div>
 
-      <div className="flex justify-between gap-[13px]">
+      {images.length > 1 && (
+        <div className="flex md:hidden justify-center gap-2 mt-2">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveIndex(i)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                i === activeIndex ? "bg-black w-4" : "bg-gray-300"
+              }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="hidden md:flex items-center justify-evenly gap-[13px]">
         {images
           .filter((_, index) => index !== activeIndex)
           .map((img, index) => {
             const realIndex = images.indexOf(img);
-
             return (
               <button
                 key={index}
                 onClick={() => setActiveIndex(realIndex)}
-                className="relative w-[167px] h-[167px] bg-gray-100"
+                className="relative w-[140px] h-[130px] md:h-[167px] bg-gray-100"
+                aria-label={`View image ${realIndex + 1}`}
               >
                 <Image
                   src={img}
-                  alt="Thumbnail"
+                  alt={`Thumbnail ${realIndex + 1}`}
                   fill
-                  className="object-cover"
-                  sizes="167px"
+                  className="object-fit"
+                  quality={85}
+                  sizes="(min-width: 768px) 167px, 25vw"
                 />
               </button>
             );

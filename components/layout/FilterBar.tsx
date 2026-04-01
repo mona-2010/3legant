@@ -1,21 +1,21 @@
 "use client"
 import React from "react"
+import { PRODUCT_CATEGORIES, PRODUCT_CATEGORY_LABELS } from "@/types"
 
-export const categories = [
-    "All Rooms",
-    "Living Room",
-    "Bedroom",
-    "Kitchen",
-    "Bathroom",
-    "Dining",
-    "Outdoor",
-]
+export const categoryFilters = ["all", ...PRODUCT_CATEGORIES] as const
+
+export type CategoryFilter = (typeof categoryFilters)[number]
+
+export const getCategoryLabel = (category: CategoryFilter) => {
+    if (category === "all") return "All Rooms"
+    return PRODUCT_CATEGORY_LABELS[category]
+}
 
 export const prices = ["all", "0-99", "100-199", "200-299", "300-399", "400+"]
 
 type FilterBarProps = {
-    selectedCategory: string
-    setSelectedCategory: React.Dispatch<React.SetStateAction<string>>
+    selectedCategory: CategoryFilter
+    setSelectedCategory: React.Dispatch<React.SetStateAction<CategoryFilter>>
     selectedPrices: string[]
     setSelectedPrices: React.Dispatch<React.SetStateAction<string[]>>
 }
@@ -42,11 +42,10 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
     return (
         <div className="flex flex-col gap-8">
-
             <div className="overflow-auto h-50">
                 <h4 className="uppercase text-sm font-semibold mb-4">Categories</h4>
                 <div className="flex flex-col gap-2">
-                    {categories.map((cat) => (
+                    {categoryFilters.map((cat) => (
                         <p
                             key={cat}
                             onClick={() => setSelectedCategory(cat)}
@@ -56,13 +55,12 @@ const FilterBar: React.FC<FilterBarProps> = ({
                                     : "text-gray-500 hover:text-black"
                             }`}
                         >
-                            {cat}
+                            {getCategoryLabel(cat)}
                         </p>
                     ))}
                 </div>
             </div>
 
-            {/* Prices */}
             <div>
                 <h4 className="uppercase text-sm font-semibold mb-4">Price</h4>
                 <div className="flex flex-col gap-2">

@@ -1,239 +1,9 @@
-// "use client";
-// import Link from "next/link";
-// import { useState, useEffect } from "react";
-// import { GiHamburgerMenu } from "react-icons/gi";
-// import { RiAccountCircleLine } from "react-icons/ri";
-// import { TbShoppingBag } from "react-icons/tb";
-// import { RxCross2 } from "react-icons/rx";
-// import NavLink from "./NavLink";
-// import { createClient } from "@/lib/supabase/client";
-// import { useRouter } from "next/navigation";
-// import CartPopup from "./MiniCart";
-// import { initialCartItems } from "@/app/cart/page";
-// import { GoHeart } from "react-icons/go";
-// import { LuSearch } from "react-icons/lu";
-// import { IoLogoInstagram } from "react-icons/io5";
-// import { SlSocialFacebook } from "react-icons/sl";
-// import { FiYoutube } from "react-icons/fi";
-// import SearchModal from "./SearchModal";
-
-// const Header = () => {
-//   const supabase = createClient();
-//   const router = useRouter();
-//   const [menuOpen, setMenuOpen] = useState(false);
-//   const [cartOpen, setCartOpen] = useState(false);
-//   const [user, setUser] = useState<any>(null);
-//   const [cartItems, setCartItems] = useState(initialCartItems);
-//   const [searchOpen, setSearchOpen] = useState(false);
-
-//   useEffect(() => {
-//     document.body.style.overflow = menuOpen || cartOpen ? "hidden" : "auto";
-//     return () => {
-//       document.body.style.overflow = "auto";
-//     };
-//   }, [menuOpen, cartOpen]);
-
-//   useEffect(() => {
-//     const getUser = async () => {
-//       const { data } = await supabase.auth.getUser();
-//       setUser(data.user);
-//     };
-//     getUser();
-
-//     const { data: listener } = supabase.auth.onAuthStateChange(() => {
-//       getUser();
-//     });
-
-//     return () => {
-//       listener.subscription.unsubscribe();
-//     };
-//   }, [supabase]);
-
-//   const handleLogout = async () => {
-//     await supabase.auth.signOut();
-//     router.refresh();
-//   };
-
-//   const updateQuantity = (id: number, type: "inc" | "dec") => {
-//     setCartItems((prev) =>
-//       prev.map((item) =>
-//         item.id === id
-//           ? { ...item, quantity: Math.max(1, item.quantity + (type === "inc" ? 1 : -1)) }
-//           : item
-//       )
-//     );
-//   };
-
-//   const removeItem = (id: number) => {
-//     setCartItems((prev) => prev.filter((item) => item.id !== id));
-//   };
-
-//   return (
-//     <>
-//       <div className="relative px-6 md:px-[80px] lg:px-[140px] h-[60px] flex items-center justify-between bg-white z-[50]">
-//         <div className="flex items-center">
-//           <GiHamburgerMenu
-//             className="md:hidden text-[22px] cursor-pointer"
-//             onClick={() => setMenuOpen(true)}
-//           />
-//           <Link href="/" className="text-[24px] font-poppins font-medium ml-5 md:mx-0">
-//             3legant.
-//           </Link>
-//         </div>
-
-//         <div className="font-inter hidden md:flex gap-[40px] max-w-[50%] md:mx-auto ml-16">
-//           <NavLink href="/" exact>Home</NavLink>
-//           <NavLink href="/shop">Shop</NavLink>
-//           <NavLink href="/product">Product</NavLink>
-//           <NavLink href="/contact-us">Contact Us</NavLink>
-//         </div>
-
-//         <div className="flex items-center gap-[16px] text-[22px] relative">
-//           <LuSearch
-//             className="hidden md:block cursor-pointer"
-//             onClick={() => setSearchOpen(true)}
-//           />
-
-//           {user ? (
-//             <Link href="/account">
-//               <div
-//                 className="hidden md:flex items-center justify-center w-9 h-9 rounded-full bg-black text-white text-sm font-semibold cursor-pointer"
-//                 title={user.display_name}
-//               >
-//                 {user.user_metadata.full_name?.charAt(0).toUpperCase() || "U"}
-//               </div>
-//             </Link>
-//           ) : (
-//             <Link href="/sign-in">
-//               <span className="hidden md:block cursor-pointer">
-//                 <RiAccountCircleLine />
-//               </span>
-//             </Link>
-//           )}
-
-//           <div
-//             className="flex items-center cursor-pointer"
-//             onClick={() => setCartOpen(true)}
-//             aria-label="Open cart"
-//             role="button"
-//             tabIndex={0}
-//           >
-//             <TbShoppingBag size={22} />
-//             <span className="bg-black text-white text-[12px] w-7 h-7 rounded-full flex items-center justify-center">
-//               {cartItems.length}
-//             </span>
-//           </div>
-//         </div>
-//       </div>
-
-//       <CartPopup
-//         cartItems={cartItems}
-//         updateQuantity={updateQuantity}
-//         removeItem={removeItem}
-//         cartOpen={cartOpen}
-//         setCartOpen={setCartOpen}
-//       />
-
-//       <div
-//         className={`fixed top-0 left-0 h-screen w-[90%] max-w-[320px] bg-white 
-//         z-[100] shadow-lg transform transition-transform duration-300 
-//         ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}
-//       >
-//         <div className="p-6 flex flex-col gap-2">
-//           <div className="flex justify-between items-center"><h1 className="font-poppins text-[20px] font-medium">3legant.</h1>
-//             <RxCross2
-//               className="text-[24px] cursor-pointer"
-//               onClick={() => setMenuOpen(false)}
-//             />
-//           </div>
-//           <div
-//             className="flex gap-3 border rounded-md p-2 items-center cursor-pointer"
-//             onClick={() => {
-//               setMenuOpen(false)
-//               setSearchOpen(true)
-//             }}
-//           >
-//             <LuSearch
-//               size={20}
-//               onClick={() => {
-//                 setMenuOpen(false)
-//                 setSearchOpen(true)
-//               }}
-//             />
-//             <input
-//               type="text"
-//               placeholder="Search"
-//               className="outline-none w-full"
-//               readOnly
-//             />
-//           </div>
-//         </div>
-
-//         <div className="p-6 flex flex-col h-[calc(100%-120px)] justify-between text-[16px]">
-//           <div className="flex flex-col gap-5">
-//             <Link href="/" onClick={() => setMenuOpen(false)} className="border-b pb-3 border-lightgray">Home</Link>
-//             <Link href="/shop" onClick={() => setMenuOpen(false)} className="border-b pb-3 border-lightgray">Shop</Link>
-//             <Link href="/product" onClick={() => setMenuOpen(false)} className="border-b pb-3 border-lightgray">Product</Link>
-//             <Link href="/contact-us" onClick={() => setMenuOpen(false)} className="border-b pb-3 border-lightgray">
-//               Contact Us
-//             </Link>
-//           </div>
-//           <div className="flex flex-col">
-//             <div className="pt-6 flex flex-col gap-4">
-//               <p
-//                 className="flex items-center justify-between cursor-pointer border-b pb-3 border-lightgray"
-//                 onClick={() => {
-//                   setMenuOpen(false)
-//                   setCartOpen(true)
-//                 }}> Cart <TbShoppingBag size={25} /></p>
-//               <p className="flex items-center justify-between cursor-pointer border-b pb-3 border-lightgray">Wishlist <GoHeart size={25} /></p>
-//             </div>
-
-//             <div className="pt-6 flex flex-col gap-4">
-//               {user ? (
-//                 <button
-//                   onClick={handleLogout}
-//                   className="bg-black text-white py-2 rounded-md"
-//                 >
-//                   Sign Out
-//                 </button>
-//               ) : (
-//                 <Link href="/sign-in">
-//                   <button className="bg-black text-white px-2 py-2 rounded-md w-full text-center">
-//                     Sign In
-//                   </button>
-//                 </Link>
-//               )}
-//             </div>
-//             <div className="flex gap-2 m-4">
-//               <IoLogoInstagram size={30} />
-//               <SlSocialFacebook size={30} />
-//               <FiYoutube size={30} />
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       {menuOpen && (
-//         <div
-//           className="fixed inset-0 bg-black/40 z-[90] transition-opacity"
-//           onClick={() => setMenuOpen(false)}
-//         />
-//       )}
-//       <SearchModal open={searchOpen} setOpen={setSearchOpen} />
-//     </>
-//   );
-// };
-
-// export default Header;
-
-
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { RiAccountCircleLine } from "react-icons/ri";
+import { RiAccountCircleLine, RiArrowDownSLine, RiArrowUpSLine } from "react-icons/ri";
 import { TbShoppingBag } from "react-icons/tb";
 import { RxCross2 } from "react-icons/rx";
 import NavLink from "./NavLink";
@@ -246,21 +16,46 @@ import { IoLogoInstagram } from "react-icons/io5";
 import { SlSocialFacebook } from "react-icons/sl";
 import { FiYoutube } from "react-icons/fi";
 import SearchModal from "./SearchModal";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store/store";
+import { fetchCart } from "@/lib/cart/fetchCart";
+import { clearCart, setCart } from "@/store/cartSlice";
+import { useAuth } from "@/components/providers/AuthProvider";
+import TintedProductImage from "./TintedProductImage";
+import { clearWishlistState, fetchWishlist } from "@/store/wishlistSlice";
+import { categoryFilters, getCategoryLabel } from "./FilterBar";
+
+interface SearchProduct {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  color?: string[];
+}
 
 const Header = () => {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const { user, role } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
+  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
+  const [mobileSearchResults, setMobileSearchResults] = useState<SearchProduct[]>([]);
+  const mobileSearchRequestSeqRef = useRef(0);
+  const lastMobileSearchQueryRef = useRef("");
 
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const wishlistCount = useSelector((state: RootState) => state.wishlist.productIds.length);
 
   useEffect(() => {
+    if (!menuOpen) {
+      setMobileSearchQuery("");
+      setMobileSearchResults([]);
+    }
     document.body.style.overflow = menuOpen || cartOpen ? "hidden" : "auto";
     return () => {
       document.body.style.overflow = "auto";
@@ -268,30 +63,58 @@ const Header = () => {
   }, [menuOpen, cartOpen]);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
+    const trimmed = mobileSearchQuery.trim();
+
+    if (!trimmed) {
+      setMobileSearchResults([]);
+      lastMobileSearchQueryRef.current = "";
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      if (lastMobileSearchQueryRef.current === trimmed) return;
+
+      const requestId = ++mobileSearchRequestSeqRef.current;
+      const { data } = await supabase
+        .from("products")
+        .select("id,title,price,image,color")
+        .ilike("title", `%${trimmed}%`)
+        .limit(4);
+
+      if (requestId !== mobileSearchRequestSeqRef.current) return;
+      lastMobileSearchQueryRef.current = trimmed;
+      setMobileSearchResults((data as SearchProduct[]) || []);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [mobileSearchQuery, supabase]);
+
+  useEffect(() => {
+    const userId = user?.id;
+
+    const syncCart = async () => {
+      if (!userId) {
+        dispatch(clearCart());
+        dispatch(clearWishlistState());
+        return;
+      }
+
+      const items = await fetchCart(userId);
+      dispatch(setCart(items));
+      dispatch(fetchWishlist({ userId }));
     };
 
-    getUser();
+    void syncCart();
+  }, [dispatch, user?.id]);
 
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
-      getUser();
-    });
-
-    return () => {
-      listener.subscription.unsubscribe();
-    };
-  }, [supabase]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.refresh();
-  };
+  // const handleLogout = async () => {
+  //   await supabase.auth.signOut();
+  //   router.push("/");
+  // };
 
   return (
     <>
-      <div className="relative px-6 md:px-[80px] lg:px-[140px] h-[60px] flex items-center justify-between bg-white z-[50]">
+      <div className="sticky top-0 px-[30px] md:px-[50px] lg:px-[80px] xl:px-[140px] h-[60px] flex items-center justify-between bg-white z-50">
         <div className="flex items-center">
           <GiHamburgerMenu
             className="md:hidden text-[22px] cursor-pointer"
@@ -303,11 +126,14 @@ const Header = () => {
           </Link>
         </div>
 
-        <div className="font-inter hidden md:flex gap-[40px] max-w-[50%] md:mx-auto ml-16">
+        <div className="font-inter hidden md:flex md:gap-[20px] lg:gap-[40px] max-w-[50%] md:mx-auto ml-16">
           <NavLink href="/" exact>Home</NavLink>
           <NavLink href="/shop">Shop</NavLink>
-          <NavLink href="/product">Product</NavLink>
+          <NavLink href="/blog">Blog</NavLink>
           <NavLink href="/contact-us">Contact Us</NavLink>
+          {role === "admin" && (
+            <NavLink href="/admin">Admin</NavLink>
+          )}
         </div>
 
         <div className="flex items-center gap-[16px] text-[22px] relative">
@@ -343,6 +169,7 @@ const Header = () => {
               {cartItems.length}
             </span>
           </div>
+
         </div>
       </div>
 
@@ -352,7 +179,7 @@ const Header = () => {
       />
 
       <div
-        className={`fixed top-0 left-0 h-screen w-[90%] max-w-[320px] bg-white 
+        className={`fixed overflow-y-auto top-0 left-0 h-screen w-[90%] max-w-[320px] bg-white 
         z-[100] shadow-lg transform transition-transform duration-300 
         ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
@@ -367,55 +194,138 @@ const Header = () => {
           </div>
 
           <div
-            className="flex gap-3 border rounded-md p-2 items-center cursor-pointer"
-            onClick={() => {
-              setMenuOpen(false);
-              setSearchOpen(true);
-            }}
+            className="flex gap-3 border rounded-md p-2 items-center"
           >
             <LuSearch size={20} />
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search products..."
               className="outline-none w-full"
-              readOnly
+              value={mobileSearchQuery}
+              onChange={(e) => setMobileSearchQuery(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="p-6 flex flex-col h-[calc(100%-120px)] justify-between text-[16px]">
+        <div className="py-2 px-6 relative flex flex-col h-full justify-between text-[16px]">
+          {mobileSearchQuery && (
+            <div className="absolute inset-0 z-10 bg-white px-6 overflow-y-auto animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex flex-col gap-4">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Search Results</h3>
+                {mobileSearchResults.length > 0 ? (
+                  mobileSearchResults.map((product) => (
+                    <Link
+                      key={product.id}
+                      href={`/product/${product.id}`}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setMobileSearchQuery("");
+                      }}
+                      className="flex items-center gap-4 hover:bg-gray-50 p-2 rounded-xl border border-transparent hover:border-gray-100 transition-all"
+                    >
+                      <div className="relative w-[60px] h-[60px] bg-gray-50 rounded-lg overflow-hidden flex-shrink-0">
+                        <TintedProductImage
+                          src={product.image}
+                          alt={product.title}
+                          fill
+                          colorHex={product.color?.[0]}
+                          className="object-contain p-1"
+                          sizes="60px"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <p className="font-medium text-sm text-gray-900 line-clamp-1">{product.title}</p>
+                        <p className="text-sm font-semibold text-black">${product.price}</p>
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-400 text-sm">No products found for "{mobileSearchQuery}"</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-5">
             <Link href="/" onClick={() => setMenuOpen(false)} className="border-b pb-3 border-lightgray">Home</Link>
-            <Link href="/shop" onClick={() => setMenuOpen(false)} className="border-b pb-3 border-lightgray">Shop</Link>
-            <Link href="/product" onClick={() => setMenuOpen(false)} className="border-b pb-3 border-lightgray">Product</Link>
+            <div className="border-b pb-3 border-lightgray flex flex-col">
+              <div 
+                className="flex justify-between items-center cursor-pointer"
+                onClick={() => setShopDropdownOpen(!shopDropdownOpen)}
+              >
+                <span>Shop</span>
+                <span className="text-xl text-gray-500">{shopDropdownOpen ? <RiArrowUpSLine /> : <RiArrowDownSLine /> }</span>
+              </div>
+              {shopDropdownOpen && (
+                <div className="flex flex-col gap-4 pl-4 mt-4 animate-in slide-in-from-top-2 duration-200">
+                  {categoryFilters.map((category) => (
+                    <Link
+                      key={category}
+                      href={`/shop${category !== "all" ? `?category=${category}` : ""}`}
+                      onClick={() => setMenuOpen(false)}
+                      className="text-gray-500 hover:text-black text-[15px]"
+                    >
+                      {getCategoryLabel(category)}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Link href="/blog" onClick={() => setMenuOpen(false)} className="border-b pb-3 border-lightgray">Blog</Link>
             <Link href="/contact-us" onClick={() => setMenuOpen(false)} className="border-b pb-3 border-lightgray">Contact Us</Link>
           </div>
 
           <div className="flex flex-col">
             <div className="pt-6 flex flex-col gap-4">
-              <p
+              <div
                 className="flex items-center justify-between cursor-pointer border-b pb-3 border-lightgray"
                 onClick={() => {
                   setMenuOpen(false);
                   setCartOpen(true);
                 }}
               >
-                Cart <TbShoppingBag size={25} />
-              </p>
+                Cart
+                <div className="flex items-center">
+                  <TbShoppingBag size={25} />
+                  <span className="bg-black text-white text-[12px] w-7 h-7 rounded-full flex items-center justify-center">
+                    {cartItems.length}
+                  </span>
+                </div>
+              </div>
 
-              <p className="flex items-center justify-between cursor-pointer border-b pb-3 border-lightgray">
-                Wishlist <GoHeart size={25} />
-              </p>
+              <Link
+                href="/account/wishlist"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center justify-between cursor-pointer border-b pb-3 border-lightgray"
+              >
+                Wishlist
+                <div className="flex items-center">
+                  <GoHeart size={25} />
+                  <span className="bg-black text-white text-[12px] w-7 h-7 rounded-full flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                </div>
+              </Link>
             </div>
 
-            <div className="pt-6 flex flex-col gap-4">
-              {user ? (
-                <button
-                  onClick={handleLogout}
+            <div className="pt-6 flex flex-col gap-4 text-center">
+              {role === "admin" && (
+                <Link
+                  href="/admin"
                   className="bg-black text-white py-2 rounded-md"
+                  onClick={() => setMenuOpen(false)}
                 >
-                  Sign Out
-                </button>
+                  Admin Dashboard
+                </Link>
+              )}
+              {user ? (
+                <Link href="/account"
+                  className="bg-black text-white py-2 rounded-md"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  My Account
+                </Link>
               ) : (
                 <Link href="/sign-in">
                   <button className="bg-black text-white px-2 py-2 rounded-md w-full text-center">

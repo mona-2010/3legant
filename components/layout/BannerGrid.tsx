@@ -6,7 +6,7 @@ import Image from "next/image";
 
 const BannerGrid = () => {
     return (
-        <section className="my-5 mx-[32px] md:mx-[140px]">
+        <section className="my-5 mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px]">
             <div className="flex justify-between flex-col md:flex-row gap-10 font-poppins">
                 <div className="relative">
                     <Image
@@ -16,7 +16,7 @@ const BannerGrid = () => {
                         height={600}
                     />
                     <div className="absolute top-15 left-10">
-                        <ButtonText heading={'Living Room'} linkTo={'shop'} text={'Shop Now'} />
+                        <ButtonText heading={'Living Room'} linkTo={'shop?category=Living%20Room'} text={'Shop Now'} />
                     </div>
                 </div>
                 <div className="flex flex-col gap-[30px]">
@@ -25,16 +25,18 @@ const BannerGrid = () => {
                             src={drawer}
                             alt="drawer"
                             width={648}
+                            height={300}
                         />
-                        <div className="absolute bottom-10 left-5"><ButtonText heading={'Bedroom'} linkTo={'shop'} text={'Shop Now'} /></div>
+                        <div className="absolute bottom-10 left-5"><ButtonText heading={'Bedroom'} linkTo={'shop?category=Bedroom'} text={'Shop Now'} /></div>
                     </div>
                     <div className="relative">
                         <Image
                             src={toaster}
                             alt="toaster"
                             width={648}
+                            height={300}
                         />
-                        <div className="absolute bottom-10 left-5"><ButtonText heading={'Kitchen'} linkTo={'shop'} text={'Shop Now'} /></div>
+                        <div className="absolute bottom-10 left-5"><ButtonText heading={'Kitchen'} linkTo={'shop?category=Kitchen'} text={'Shop Now'} /></div>
                     </div>
                 </div>
 

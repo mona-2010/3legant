@@ -1,16 +1,20 @@
 "use client";
-import { CartItem } from "@/types/cart";
-import Image from "next/image";
+import { CartItem } from "@/types/index";
 import { RxCross2 } from "react-icons/rx";
-import CheckoutForm from "../forms/CheckOutForm";
+import CheckoutForm, { FormData } from "../forms/CheckOutForm";
+import CouponInput from "./CouponInput";
+import TintedProductImage from "./TintedProductImage";
 
 type Props = {
   cartItems: CartItem[];
   subtotal: number;
   shippingCost: number;
+  shippingMethod: string;
+  discount: number;
   total: number;
+  isCartEmpty: boolean;
+  appliedCouponId?: string;
   updateQuantity: (id: string, type: "inc" | "dec") => Promise<void>;
-  onValidSubmit: () => void;
   removeItem: (id: string) => Promise<void>;
 };
 
@@ -18,49 +22,72 @@ const CheckoutDetail = ({
   cartItems,
   subtotal,
   shippingCost,
+  shippingMethod,
+  discount,
   total,
-  onValidSubmit,
+  isCartEmpty,
+  appliedCouponId,
   removeItem,
   updateQuantity,
 }: Props) => {
   return (
-    <div className="font-inter flex flex-col lg:flex-row gap-10 px-6 my-10 mx-[30px] lg:mx-[140px] items-start">
-      <CheckoutForm onValidSubmit={onValidSubmit} />
+    <div className="font-inter flex flex-col lg:flex-row gap-8 lg:gap-10 px-[30px] md:px-[50px] lg:px-[80px] xl:px-[140px] my-8 sm:my-10 items-start">
+      <CheckoutForm
+        total={total}
+        subtotal={subtotal}
+        discount={discount}
+        shippingCost={shippingCost}
+        shippingMethod={shippingMethod}
+        isCartEmpty={isCartEmpty}
+        cartItems={cartItems}
+        appliedCouponId={appliedCouponId}
+      />
       <div className="w-full lg:w-1/3">
-        <aside className="border border-gray-200 rounded p-5 sticky top-10">
+        <aside className="border border-gray-200 rounded p-4 sm:p-5 lg:sticky lg:top-10">
           <h1 className="pb-4 font-semibold text-lg">Order Summary</h1>
 
           {cartItems.map((item) => (
             <div
               key={item.id}
-              className="flex justify-between items-center mb-4"
+              className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4"
             >
               <div className="flex gap-3 items-center">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  width={90}
-                  height={90}
-                  className="object-cover"
-                />
+                <div className="relative w-[72px] h-[72px] sm:w-[90px] sm:h-[90px]">
+                  <TintedProductImage
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    colorHex={item.color}
+                    className="object-fit mix-blend-multiply"
+                    sizes="(min-width: 640px) 90px, 72px"
+                  />
+                </div>
                 <div>
                   <p className="text-sm font-medium">{item.name}</p>
                   <p className="text-sm mt-2 text-gray-400">
-                    Color: {item.color}
+                    Color: {item.color || "Default"}
                   </p>
                   <div className="border border-gray-200 flex items-center w-fit my-2 px-3 py-1 rounded">
-                    <button onClick={() => updateQuantity(item.id, "dec")}>
+                    <button
+                      onClick={() => updateQuantity(item.id, "dec")}
+                      disabled={item.quantity <= 1}
+                      className={item.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""}
+                    >
                       -
                     </button>
                     <span className="px-3 text-sm">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, "inc")}>
+                    <button
+                      onClick={() => updateQuantity(item.id, "inc")}
+                      disabled={typeof item.stock === "number" && item.quantity >= item.stock}
+                      className={typeof item.stock === "number" && item.quantity >= item.stock ? "opacity-50 cursor-not-allowed" : ""}
+                    >
                       +
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 self-end sm:self-auto">
                 <span className="text-sm font-medium">
                   ${(item.price * item.quantity).toFixed(2)}
                 </span>
@@ -73,13 +100,16 @@ const CheckoutDetail = ({
           ))}
 
           <hr className="my-4" />
+          <CouponInput subtotal={subtotal} />
+          <hr className="my-4" />
+          
           <div className="flex justify-between text-gray-600">
-            <span>Subtotal</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>Shipping</span>
+            <span>{shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}</span>
           </div>
           <div className="flex justify-between text-gray-600 mt-2">
-            <span>Shipping</span>
-            <span>${shippingCost.toFixed(2)}</span>
+            <span>Subtotal</span>
+            <span>${subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between font-semibold text-lg mt-4">
             <span>Total</span>

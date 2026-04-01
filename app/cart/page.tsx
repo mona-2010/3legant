@@ -1,246 +1,106 @@
-// "use client"
-// import { Header } from "@/components/dynamicComponents";
-// import CheckoutDetail from "@/components/layout/CheckoutDetail";
-// import CompleteOrder from "@/components/layout/CompleteOrder";
-// import Footer from "@/components/layout/Footer";
-// import ShoppingCart from "@/components/layout/ShoppingCart";
-// import StepIndicator from "@/components/layout/StepIndicator";
-// import { useState } from "react";
-// import tray1 from '@/app/assets/images/tray1.png'
-// import tray2 from '@/app/assets/images/tray2.png'
-// import tablelamp from '@/app/assets/images/tablelamp.png'
-// import { StaticImageData } from "next/image";
-
-// export type CartItem = {
-//     id: number;
-//     name: string;
-//     color: string;
-//     price: number;
-//     quantity: number;
-//     image: StaticImageData;
-// };
-
-// export const initialCartItems: CartItem[] = [
-//     { id: 1, name: "Tray Table", color: "Black", price: 19, quantity: 2, image: tray1},
-//     { id: 2, name: "Tray Table", color: "Red", price: 19, quantity: 2, image: tray2 },
-//     { id: 3, name: "Tray Table", color: "Black", price: 19, quantity: 2, image: tablelamp },
-// ];
-
-// export default function Page() {
-//     const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
-//     const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
-//     const [shippingCost, setShippingCost] = useState(0);
-
-//     const updateQuantity = (id: number, type: "inc" | "dec") => {
-//         setCartItems(prev =>
-//             prev.map(item =>
-//                 item.id === id
-//                     ? { ...item, quantity: Math.max(1, item.quantity + (type === "inc" ? 1 : -1)) }
-//                     : item
-//             )
-//         );
-//     };
-
-//     const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-//     const total = subtotal + shippingCost;
-
-//     const removeItem = (id: number) => {
-//         setCartItems(prev => prev.filter(item => item.id !== id))
-//     }
-//     return (
-//         <div>
-//             <Header />
-//             <h1 className="mt-10 font-poppins text-center text-[56px]">Cart</h1>
-//             <div>
-//                 <StepIndicator activeStep={activeStep} />
-
-//                 {activeStep === 1 && (
-//                     <ShoppingCart
-//                         cartItems={cartItems}
-//                         updateQuantity={updateQuantity}
-//                         subtotal={subtotal}
-//                         shippingCost={shippingCost}
-//                         setShippingCost={setShippingCost}
-//                         total={total}
-//                         onCheckout={() => setActiveStep(2)}
-//                         removeItem={removeItem}
-//                     />
-//                 )}
-
-//                 {activeStep === 2 && (
-//                     <CheckoutDetail
-//                         cartItems={cartItems}
-//                         subtotal={subtotal}
-//                         shippingCost={shippingCost}
-//                         total={total}
-//                         updateQuantity={updateQuantity}
-//                         onValidSubmit={() => setActiveStep(3)}
-//                         removeItem={removeItem}
-//                     />
-//                 )}
-
-//                 {activeStep === 3 && (
-//                     <CompleteOrder total={total} />
-//                 )}</div>
-//             <Footer />
-//         </div>
-//     );
-// }
-
 "use client"
 
-import { Header } from "@/components/dynamicComponents"
-import CheckoutDetail from "@/components/layout/CheckoutDetail"
-import CompleteOrder from "@/components/layout/CompleteOrder"
-import Footer from "@/components/layout/Footer"
 import ShoppingCart from "@/components/layout/ShoppingCart"
-import StepIndicator from "@/components/layout/StepIndicator"
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import { useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { RootState, AppDispatch } from "@/store/store"
-import {
-  setCart,
-  increaseQty,
-  decreaseQty,
-  removeFromCart,
-  clearCart
-} from "@/store/cartSlice"
-import { fetchCart } from "@/lib/cart/fetchCart"
+import { increaseQty, decreaseQty, removeFromCart, removeCoupon } from "@/store/cartSlice"
+import { removeCartItem, updateCartItemQuantity } from "@/lib/cart/mutations"
+import { calculateShippingCost } from "@/lib/shipping"
+import { calculateDiscountAmount } from "@/lib/coupons"
+import { useEffect } from "react"
+import { toast } from "react-toastify"
+import { useCouponSync } from "@/lib/hooks"
 
-export default function Page() {
-
-  const supabase = createClient()
+export default function CartPage() {
   const dispatch = useDispatch<AppDispatch>()
+  const router = useRouter()
+  const quantityFlushTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const pendingQtyByItemRef = useRef<Record<string, number>>({})
 
   const cartItems = useSelector((state: RootState) => state.cart.items)
   const shippingMethod = useSelector((state: RootState) => state.cart.shippingMethod)
-
-  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1)
-
-  const loadCart = async () => {
-    const items = await fetchCart()
-    dispatch(setCart(items))
-  }
-
-useEffect(() => {
-
-  const loadCart = async () => {
-    const items = await fetchCart()
-    dispatch(setCart(items))
-  }
-
-  loadCart()
-
-  const {
-    data: { subscription }
-  } = supabase.auth.onAuthStateChange(async (event) => {
-
-    if (event === "SIGNED_OUT") {
-      dispatch(clearCart())
-    }
-
-    if (event === "SIGNED_IN") {
-      const items = await fetchCart()
-      dispatch(setCart(items))
-    }
-
-  })
-
-  return () => subscription.unsubscribe()
-
-}, [])
+  const appliedCoupon = useSelector((state: RootState) => state.cart.appliedCoupon)
 
   const updateQuantity = async (id: string, type: "inc" | "dec") => {
-
     const item = cartItems.find(i => i.id === id)
     if (!item) return
 
-    const newQty =
-      type === "inc"
-        ? item.quantity + 1
-        : item.quantity - 1
+    if (type === "dec" && item.quantity <= 1) return
 
-    if (newQty <= 0) {
-      removeItem(id)
-      return
+    const newQty = type === "inc" ? item.quantity + 1 : item.quantity - 1
+
+    type === "inc" ? dispatch(increaseQty(id)) : dispatch(decreaseQty(id))
+
+    pendingQtyByItemRef.current[id] = newQty
+    if (quantityFlushTimersRef.current[id]) {
+      clearTimeout(quantityFlushTimersRef.current[id])
     }
 
-    await supabase
-      .from("cart")
-      .update({ quantity: newQty })
-      .eq("id", id)
-
-    type === "inc"
-      ? dispatch(increaseQty(id))
-      : dispatch(decreaseQty(id))
+    quantityFlushTimersRef.current[id] = setTimeout(async () => {
+      const finalQty = pendingQtyByItemRef.current[id]
+      if (typeof finalQty === "number") {
+        await updateCartItemQuantity(id, finalQty)
+      }
+      delete pendingQtyByItemRef.current[id]
+      delete quantityFlushTimersRef.current[id]
+    }, 250)
   }
 
   const removeItem = async (id: string) => {
-
-    await supabase
-      .from("cart")
-      .delete()
-      .eq("id", id)
-
+    await removeCartItem(id)
     dispatch(removeFromCart(id))
   }
 
-  const subtotal = cartItems.reduce(
-    (sum, i) => sum + i.price * i.quantity,
-    0
-  )
+  const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const shippingCost = calculateShippingCost(shippingMethod, subtotal)
+  const discount = appliedCoupon ? calculateDiscountAmount(appliedCoupon.coupon, subtotal) : 0
+  const total = subtotal + shippingCost - discount
 
-  const shippingCost =
-    shippingMethod === "express"
-      ? 15
-      : shippingMethod === "pickup"
-      ? subtotal * 0.21
-      : 0
+  // Real-time coupon synchronization with subtotal-aware validation
+  useCouponSync({
+    enabled: !!appliedCoupon,
+    subtotal,
+    showNotification: true,
+    debug: false
+  })
 
-  const total = subtotal + shippingCost
+  useEffect(() => {
+    if (!appliedCoupon) return
+    const minRequired = appliedCoupon.coupon.min_purchase_amount
+    if (typeof minRequired === "number" && subtotal < minRequired) {
+      dispatch(removeCoupon())
+      toast.warning("Coupon removed: minimum order amount not met")
+    }
+  }, [appliedCoupon, subtotal, dispatch])
+
+  useEffect(() => {
+    return () => {
+      Object.values(quantityFlushTimersRef.current).forEach((timer) => clearTimeout(timer))
+
+      for (const [id, qty] of Object.entries(pendingQtyByItemRef.current)) {
+        void updateCartItemQuantity(id, qty)
+      }
+
+      quantityFlushTimersRef.current = {}
+      pendingQtyByItemRef.current = {}
+    }
+  }, [])
 
   return (
-    <div>
-
-      <Header />
-
-      <h1 className="mt-10 font-poppins text-center text-[56px]">
-        Cart
-      </h1>
-
-      <StepIndicator activeStep={activeStep} />
-
-      {activeStep === 1 && (
-        <ShoppingCart
-          cartItems={cartItems}
-          updateQuantity={updateQuantity}
-          subtotal={subtotal}
-          shippingCost={shippingCost}
-          total={total}
-          onCheckout={() => setActiveStep(2)}
-          removeItem={removeItem}
-        />
-      )}
-
-      {activeStep === 2 && (
-        <CheckoutDetail
-          cartItems={cartItems}
-          subtotal={subtotal}
-          shippingCost={shippingCost}
-          total={total}
-          updateQuantity={updateQuantity}
-          onValidSubmit={() => setActiveStep(3)}
-          removeItem={removeItem}
-        />
-      )}
-
-      {activeStep === 3 && (
-        <CompleteOrder total={total} />
-      )}
-
-      <Footer />
-
-    </div>
+    <ShoppingCart
+      cartItems={cartItems}
+      updateQuantity={updateQuantity}
+      subtotal={subtotal}
+      shippingCost={shippingCost}
+      discount={discount}
+      total={total}
+      onCheckout={() => {
+        if (cartItems.length === 0) return
+        router.push("/cart/checkout")
+      }}
+      removeItem={removeItem}
+    />
   )
 }

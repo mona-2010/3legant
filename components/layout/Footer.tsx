@@ -5,7 +5,7 @@ import { PiInstagramLogo } from "react-icons/pi";
 
 const Footer = () => {
     return (
-        <footer className="w-full bg-[#141718] px-[30px] md:px-[140px]">
+        <footer className="w-full bg-[#141718] px-[30px] md:px-[50px] lg:px-[80px] xl:px-[140px]">
             <div className="py-15 text-lightgray">
                 <div className="flex flex-col md:gap-10 md:flex-row md:justify-between md:border-b-1 ">
                     <div className="flex flex-col text-center md:flex-row my-auto">
@@ -21,9 +21,6 @@ const Footer = () => {
                         </Link>
                         <Link href="/shop" className="mb-8 md:mr-10">
                             Shop
-                        </Link>
-                        <Link href="/product" className="mb-8 md:mr-10">
-                            Product
                         </Link>
                         <Link href="/blog" className="mb-8 md:mr-10">
                             Blog
