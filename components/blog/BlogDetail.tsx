@@ -88,12 +88,12 @@ const BlogDetail = ({ blog }: BlogDetailProps) => {
             <h1 className='w-full lg:w-[70%] font-[500] mb-5 font-poppins text-[38px] md:text-[54px] leading-[46px] md:leading-[58px]'>
                 {blog.title}
             </h1>
-            <div className='flex gap-10 text-gray-500'>
-                <p className='flex gap-1 items-center'>
+            <div className='flex flex-col md:flex-row gap-2 md:gap-10 text-gray-500'>
+                <p className='flex gap-1 md:items-center'>
                     <PiUserCircleLight className='text-2xl' />
                     {blog.author || 'Admin'}
                 </p>
-                <p className='flex gap-1 items-center'>
+                <p className='flex gap-1 md:items-center'>
                     <HiOutlineCalendar className='text-2xl' />
                     {formatBlogDate(blog.published_at)}
                 </p>
@@ -154,7 +154,7 @@ const BlogDetail = ({ blog }: BlogDetailProps) => {
                     </div>
                 </div>
             </div>
-            <Blog heading="You might also like" headingAs="h2" />
+            {/* <Blog heading="You might also like" headingAs="h2" /> */}
         </div>
     )
 }

@@ -1,5 +1,3 @@
-"use client"
-
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins, Inter } from "next/font/google";
 import "./globals.css";
@@ -37,6 +35,11 @@ const inter = Inter({
   display: 'swap',
   preload: false,
 })
+
+export const metadata: Metadata = {
+  title: "Ecommerce Website",
+  description: "Shop products, manage your cart, and complete orders online.",
+};
 
 
 export default function RootLayout({

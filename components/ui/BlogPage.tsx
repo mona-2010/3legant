@@ -87,7 +87,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                     </button>
                 </div>
 
-                <div className="flex items-center gap-4 mt-4 md:mt-0 text-black">
+                <div className="flex items-center gap-4 my-4 md:mt-0 text-black">
                     <select
                         value={activeTab}
                         onChange={(e) => {
@@ -142,17 +142,17 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
             </div>
 
             <div
-                className={`mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] gap-8
+                className={`mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] gap-2 lg:gap-8
                 ${view === "grid3" && "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}
                 ${view === "grid2" && "grid grid-cols-1 sm:grid-cols-4"}
                 ${view === "grid1" && "grid grid-cols-2"}
-                ${view === "list" && "flex flex-col"}
+                ${view === "list" && "flex flex-col h-auto"}
                 `}
             >
                 {visibleBlogs.map((blog, index) => (
                     <div
                         key={blog.id || index}
-                        className={`my-6 ${(view === "list" || view === "grid1") && "flex gap-6 items-center"}`}
+                        className={`my-0 md:my-6 ${(view === "list" || view === "grid1") && "flex flex-col md:flex-row gap-2 md:gap-6 items-center"}`}
                     >
                         <Link href={`/blog/${blog.slug}`}>
                             <SafeImage
@@ -161,12 +161,12 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                                 alt={blog.title}
                                 width={800}
                                 height={500}
-                                className={` ${(view === "list" || view === "grid1") ? "max-w-[200px] h-50" : "w-full h-90"}`}
+                                className={`object-cover ${(view === "list" || view === "grid1") ? "max-w-auto md:max-w-[200px] h-50" : "w-full h-90"}`}
                             />
                         </Link>
 
                         <div>
-                            <p className="font-inter text-base text-black mt-4 mb-2 lg:text-xl">
+                            <p className="line-clamp-2 md:line-clamp-4 font-inter text-base text-black mt-4 mb-2 lg:text-xl">
                                 {blog.title}
                             </p>
                             <p className='text-[12px] text-gray-200'>

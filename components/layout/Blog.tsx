@@ -24,7 +24,7 @@ const Blog = async ({ heading = "Articles", headingAs: HeadingTag = "p" }: BlogP
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
         {blogs.map((blog, index) => (
           <div key={index} className={`my-6`}>
-            <SafeImage src={getBlogImageUrl(blog.cover_image_path) || blog.cover_image || blogFallbackImage} fallbackSrc={blogFallbackImage} alt={blog.title} width={900} height={500} className="w-90 lg:w-auto h-90" />
+            <SafeImage src={getBlogImageUrl(blog.cover_image_path) || blog.cover_image || blogFallbackImage} fallbackSrc={blogFallbackImage} alt={blog.title} width={900} height={500} className="object-cover w-90 lg:w-auto h-90" />
             <p className="font-inter text-base text-black mt-4 mb-2 lg:text-xl">
               {blog.title}
             </p>
