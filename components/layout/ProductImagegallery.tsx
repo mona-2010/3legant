@@ -74,7 +74,7 @@ export default function ProductImageGallery({
   return (
     <div className="flex flex-col gap-5 w-full">
       <div
-        className="relative w-full h-[400px] sm:h-[520px] lg:h-[650px] bg-white flex items-center justify-center overflow-hidden touch-pan-y"
+        className="relative w-full h-[400px] lg:h-[650px] bg-white flex items-center justify-center overflow-hidden touch-pan-y"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -148,7 +148,7 @@ export default function ProductImageGallery({
         </div>
       )}
 
-      <div className="hidden md:flex items-center justify-evenly gap-[13px]">
+      <div className="hidden md:flex items-center justify-between gap-[8px]">
         {images
           .filter((_, index) => index !== activeIndex)
           .map((img, index) => {
@@ -157,7 +157,7 @@ export default function ProductImageGallery({
               <button
                 key={index}
                 onClick={() => setActiveIndex(realIndex)}
-                className="relative w-[140px] h-[130px] md:h-[167px] bg-gray-100"
+                className="relative w-[170px] h-[130px] md:h-[167px] bg-gray-100"
                 aria-label={`View image ${realIndex + 1}`}
               >
                 <Image

@@ -78,7 +78,7 @@ export default function ProductListItem({ product, grid, liked, onWishlist, onAd
           </div>
           <div className="flex flex-col w-full flex-1">
             <StarRating rating={Math.round((rating || 0) * 2) / 2} />
-            <p className="text-2xl font-semibold mt-2">{title}</p>
+            <p className="text-xl md:text-2xl font-semibold mt-2">{title}</p>
             {description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{description}</p>}
             {priceBlock}
             <button

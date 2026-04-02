@@ -47,13 +47,6 @@ const fetchProducts = async () => {
     notify();
   }
   
-  const fetchTimeout = setTimeout(() => {
-    if (store.loading) {
-      store.loading = false;
-      notify();
-    }
-  }, 10000); 
-  
   try {
     const supabase = createClient();
     const { data, error } = await supabase.from("products").select("*");
@@ -78,7 +71,6 @@ const fetchProducts = async () => {
   } catch (err) {
     fetchPromise = null; 
   } finally {
-    clearTimeout(fetchTimeout);
     store.loading = false;
     notify();
   }

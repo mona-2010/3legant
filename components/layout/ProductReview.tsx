@@ -161,100 +161,139 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
     }
 
     const visibleReviews = reviews.slice(0, visibleCount)
-
-    return (
-        <div className="mt-20">
-            <div className="flex flex-col md:flex-row items-start gap-8 border-b border-lightgray pb-4 text-gray-500 text-sm font-medium">
-                <TabButton tab="info" activeTab={activeTab} onClick={setActiveTab} label="Additional Info" />
-                <TabButton tab="questions" activeTab={activeTab} onClick={setActiveTab} label="Questions" />
-                <TabButton tab="reviews" activeTab={activeTab} onClick={setActiveTab} label="Reviews" />
+    const renderReviewsContent = () => (
+        <div className="mt-4 md:mt-10">
+            <h2 className="font-poppins text-2xl font-[500]">Customer Reviews</h2>
+            <div className="flex items-center gap-3 mt-3">
+                <StarRating rating={Math.round(avgRating * 2) / 2} />
+                <p className="text-gray-600 text-sm">{reviewLabel(reviews.length)}</p>
             </div>
 
-            {activeTab === "info" && (
-                <AdditionalInfoTab
-                    shortDescription={shortDescription}
-                    measurements={measurements}
-                    weight={weight}
+            <p className="mt-2">{productTitle}</p>
+
+            {!showForm ? (
+                <ReviewEntry
+                    userId={userId}
+                    reviews={reviews}
+                    onStartEditingReview={startEditingReview}
+                    onShowForm={() => setShowForm(true)}
+                />
+            ) : (
+                <ReviewForm
+                    reviewRating={reviewRating}
+                    setReviewRating={setReviewRating}
+                    reviewText={reviewText}
+                    setReviewText={setReviewText}
+                    submitting={submitting}
+                    editingReviewId={editingReviewId}
+                    onSubmit={handleSubmitReview}
+                    onCancel={resetReviewForm}
                 />
             )}
 
-            {activeTab === "questions" && (
-                <QuestionsTab />
+            <ReviewHeader
+                totalReviews={reviews.length}
+                sortBy={sortBy}
+                onSortByChange={(value) => {
+                    setSortBy(value)
+                    setVisibleCount(2)
+                }}
+            />
+
+            {loading ? (
+                <p className="mt-10 text-gray-500">Loading reviews...</p>
+            ) : reviews.length === 0 ? (
+                <p className="mt-10 text-gray-500">No reviews yet. Be the first to review this product!</p>
+            ) : (
+                <div className="mt-10 space-y-10">
+                    {visibleReviews.map((review) => (
+                        <ReviewItem
+                            key={review.id}
+                            review={review}
+                            userId={userId}
+                            isOwner={userId === review.user_id}
+                            onEdit={startEditingReview}
+                            onDelete={handleDeleteReview}
+                            onToggleLike={handleToggleLike}
+                            onAddReply={handleAddReply}
+                            onDeleteReply={handleDeleteReply}
+                        />
+                    ))}
+                </div>
             )}
 
-            {activeTab === "reviews" && (
-                <div className="mt-10">
-                    <h2 className="font-poppins text-2xl font-[500]">Customer Reviews</h2>
-                    <div className="flex items-center gap-3 mt-3">
-                        <StarRating rating={Math.round(avgRating * 2) / 2} />
-                        <p className="text-gray-600 text-sm">{reviewLabel(reviews.length)}</p>
-                    </div>
+            {visibleCount < reviews.length && (
+                <div className="flex justify-center mt-10">
+                    <button
+                        onClick={() => setVisibleCount(reviews.length)}
+                        className="border px-8 py-3 rounded-full hover:bg-black hover:text-white transition"
+                    >
+                        Load more
+                    </button>
+                </div>
+            )}
+        </div>
+    )
 
-                    <p className="mt-2">{productTitle}</p>
-
-                    {!showForm ? (
-                        <ReviewEntry
-                            userId={userId}
-                            reviews={reviews}
-                            onStartEditingReview={startEditingReview}
-                            onShowForm={() => setShowForm(true)}
-                        />
-                    ) : (
-                        <ReviewForm
-                            reviewRating={reviewRating}
-                            setReviewRating={setReviewRating}
-                            reviewText={reviewText}
-                            setReviewText={setReviewText}
-                            submitting={submitting}
-                            editingReviewId={editingReviewId}
-                            onSubmit={handleSubmitReview}
-                            onCancel={resetReviewForm}
-                        />
-                    )}
-
-                    <ReviewHeader
-                        totalReviews={reviews.length}
-                        sortBy={sortBy}
-                        onSortByChange={(value) => {
-                            setSortBy(value)
-                            setVisibleCount(2)
-                        }}
-                    />
-
-                    {loading ? (
-                        <p className="mt-10 text-gray-500">Loading reviews...</p>
-                    ) : reviews.length === 0 ? (
-                        <p className="mt-10 text-gray-500">No reviews yet. Be the first to review this product!</p>
-                    ) : (
-                        <div className="mt-10 space-y-10">
-                            {visibleReviews.map((review) => (
-                                <ReviewItem
-                                    key={review.id}
-                                    review={review}
-                                    userId={userId}
-                                    isOwner={userId === review.user_id}
-                                    onEdit={startEditingReview}
-                                    onDelete={handleDeleteReview}
-                                    onToggleLike={handleToggleLike}
-                                    onAddReply={handleAddReply}
-                                    onDeleteReply={handleDeleteReply}
-                                />
-                            ))}
-                        </div>
-                    )}
-
-                    {visibleCount < reviews.length && (
-                        <div className="flex justify-center mt-10">
-                            <button
-                                onClick={() => setVisibleCount(reviews.length)}
-                                className="border px-8 py-3 rounded-full hover:bg-black hover:text-white transition"
-                            >
-                                Load more
-                            </button>
+    return (
+        <div className="mt-10 md:mt-20">
+            {/* Mobile Accordion */}
+            <div className="md:hidden flex flex-col w-full">
+                <div>
+                    <TabButton tab="info" activeTab={activeTab} onClick={setActiveTab} label="Additional Info" />
+                    {activeTab === "info" && (
+                        <div className="pb-8">
+                            <AdditionalInfoTab
+                                shortDescription={shortDescription}
+                                measurements={measurements}
+                                weight={weight}
+                            />
                         </div>
                     )}
                 </div>
-            )}
+                <div className="border-t border-transparent">
+                    <TabButton tab="questions" activeTab={activeTab} onClick={setActiveTab} label="Questions" />
+                    {activeTab === "questions" && (
+                        <div className="pb-8">
+                            <QuestionsTab />
+                        </div>
+                    )}
+                </div>
+                <div className="border-t border-transparent">
+                    <TabButton tab="reviews" activeTab={activeTab} onClick={setActiveTab} label="Reviews" count={reviews.length} />
+                    {activeTab === "reviews" && (
+                        <div className="pb-8">
+                            {renderReviewsContent()}
+                        </div>
+                    )}
+                </div>
+                <div className="border-b border-lightgray w-full" />
+            </div>
+
+            {/* Desktop Tabs */}
+            <div className="hidden md:block">
+                <div className="flex flex-row items-start gap-8 border-b border-lightgray text-gray-500 text-sm font-medium">
+                    <TabButton tab="info" activeTab={activeTab} onClick={setActiveTab} label="Additional Info" />
+                    <TabButton tab="questions" activeTab={activeTab} onClick={setActiveTab} label="Questions" />
+                    <TabButton tab="reviews" activeTab={activeTab} onClick={setActiveTab} label="Reviews" count={reviews.length} />
+                </div>
+
+                <div className="mt-10">
+                    {activeTab === "info" && (
+                        <AdditionalInfoTab
+                            shortDescription={shortDescription}
+                            measurements={measurements}
+                            weight={weight}
+                        />
+                    )}
+
+                    {activeTab === "questions" && (
+                        <QuestionsTab />
+                    )}
+
+                    {activeTab === "reviews" && renderReviewsContent()}
+                </div>
+            </div>
         </div>
     )
 }

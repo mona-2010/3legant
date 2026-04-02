@@ -53,7 +53,7 @@ export default function ProductInfo({
         <p>{product.review_count || 0} Reviews</p>
       </div>
 
-      <h1 className="font-poppins text-[40px]">{product.title}</h1>
+      <h1 className="font-poppins text-[32px] lg:text-[40px]">{product.title}</h1>
       <p className="text-gray-200 w-[90%] leading-[26px]">{product.description}</p>
       <div className="flex items-center gap-3 font-poppins font-[500]">
         <p className="text-[28px]">${product.price}</p>
@@ -62,7 +62,7 @@ export default function ProductInfo({
         ) : null}
       </div>
 
-      <div className="border-y py-5 border-lightgray">
+      {/* <div className="border-y py-5 border-lightgray"> */}
         {hasActiveDiscount ? (
           <>
             <p>Offer expires in:</p>
@@ -78,9 +78,9 @@ export default function ProductInfo({
             </div>
           </>
         ) : (
-          <p className="text-sm text-gray-500 py-4">No active offer for this product.</p>
+          ""
         )}
-      </div>
+      {/* </div> */}
 
       <div className="border-b border-lightgray pb-5">
         <p className="text-xl text-gray-200">Measurements</p>

@@ -179,7 +179,7 @@ export default function ProductDetailPage() {
                         ]}
                     />
                 </div>
-                <div className="flex flex-col md:flex-row gap-15">
+                <div className="flex flex-col md:flex-row gap-8 md:gap-10 lg:gap-15">
                     <div className="flex flex-col gap-1 md:w-1/2">
                         <ProductImageGallery
                             images={productImages.length > 0 ? productImages : product.image ? [product.image] : []}

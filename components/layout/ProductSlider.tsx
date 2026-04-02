@@ -112,7 +112,7 @@ const ProductSlider = ({ products, grid }: Props) => {
           )
         }
         return (
-          <div key={product.id} className="group bg-white p-4">
+          <div key={product.id} className="group bg-white">
             <ProductCard product={product} />
           </div>
         )

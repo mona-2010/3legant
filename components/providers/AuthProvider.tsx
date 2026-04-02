@@ -1,12 +1,22 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useContext, useEffect, useMemo } from "react"
+import { useDispatch, useSelector } from "react-redux"
 import { createClient } from "@/lib/supabase/client"
-import { User, Session } from "@supabase/supabase-js"
+import { User } from "@supabase/supabase-js"
+import { AppDispatch } from "@/store/store"
+import {
+  initAuth,
+  setAuthUser,
+  clearAuth,
+  selectAuthUser,
+  selectAuthRole,
+  selectIsAuthLoading,
+} from "@/store/authSlice"
 
 type AuthContextType = {
   user: User | null
-  session: Session | null
+  session: null
   loading: boolean
   role: 'admin' | 'user' | null
 }
@@ -21,73 +31,57 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext)
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [role, setRole] = useState<'admin' | 'user' | null>(null)
-  const [loading, setLoading] = useState(true)
+  const dispatch = useDispatch<AppDispatch>()
   const supabase = useMemo(() => createClient(), [])
 
+  // Read auth state from Redux (not local React state)
+  const user = useSelector(selectAuthUser)
+  const role = useSelector(selectAuthRole)
+  const loading = useSelector(selectIsAuthLoading)
+
   useEffect(() => {
-    let isMounted = true
-    let authSubscription: { unsubscribe: () => void } | null = null
+    // 1. Initial server-verified auth check.
+    //    initAuth calls getUser() which hits the Supabase API and refreshes
+    //    any expired access token automatically using the refresh token.
+    dispatch(initAuth())
 
-    const fetchRole = async (userId: string) => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single()
-      return profile?.role as 'admin' | 'user' | null
-    }
-
-    const initializeAuth = async () => {
-      const { data: { session: initialSession } } = await supabase.auth.getSession()
-      if (!isMounted) return
-
-      setSession(initialSession)
-      setUser(initialSession?.user ?? null)
-
-      if (initialSession?.user) {
-        const userRole = await fetchRole(initialSession.user.id)
-        if (isMounted) setRole(userRole)
-      } else {
-        setRole(null)
-      }
-
-      setLoading(false)
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event: string, currentSession: Session | null) => {
-          if (!isMounted) return
-          setSession(currentSession)
-          setUser(currentSession?.user ?? null)
-
-          if (currentSession?.user) {
-            const userRole = await fetchRole(currentSession.user.id)
-            if (isMounted) setRole(userRole)
-          } else {
-            setRole(null)
-          }
-
-          setLoading(false)
+    // 2. React to future auth events (login, logout, token refresh).
+    //    KEY: Only dispatch clearAuth() on an explicit SIGNED_OUT event.
+    //    We do NOT clear the user on TOKEN_REFRESHED or transient null sessions
+    //    — this prevents the "briefly logged out" redirect bug caused by
+    //    Supabase's refresh process firing onAuthStateChange with a null session.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event: string, session: import('@supabase/supabase-js').Session | null) => {
+        if (event === 'SIGNED_OUT') {
+          dispatch(clearAuth())
+        } else if (session?.user) {
+          // SIGNED_IN, TOKEN_REFRESHED, USER_UPDATED — update user in Redux
+          dispatch(setAuthUser({ user: session.user }))
         }
-      )
+        // INITIAL_SESSION with null means not logged in → handled by initAuth above
+      }
+    )
 
-      authSubscription = subscription
+    // 3. When the user returns to this tab, browsers may have throttled the
+    //    Supabase auto-refresh timer. Dispatch initAuth() which calls getUser()
+    //    and forces a server-side token refresh if the access token has expired.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        dispatch(initAuth())
+      }
     }
 
-    void initializeAuth()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      isMounted = false
-      authSubscription?.unsubscribe()
+      subscription.unsubscribe()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [supabase])
+  }, [dispatch, supabase])
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, role }}>
+    <AuthContext.Provider value={{ user, session: null, loading, role }}>
       {children}
     </AuthContext.Provider>
   )
 }
-
