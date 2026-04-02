@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { internalCreateOrder } from "@/lib/actions/orders"
+import { clearCartByUserId } from "@/lib/cart/mutations-server"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-02-25.clover",
@@ -41,14 +42,26 @@ export async function POST(req: NextRequest) {
           })
           .eq("stripe_payment_intent_id", pi.id)
 
-        // Move order to processing once payment is confirmed
-        const { data: order } = await supabase
+        // 1. Try finding by payment_intent_id
+        let { data: order } = await supabase
           .from("orders")
-          .select("id")
+          .select("id, user_id")
           .eq("payment_intent_id", pi.id)
           .maybeSingle()
-
+        
+        // 2. If not found, try finding by orderId in metadata
+        if (!order && pi.metadata?.orderId) {
+          console.log(`[Webhook] Order NOT found by PI ID ${pi.id}. Trying metadata orderId: ${pi.metadata.orderId}`)
+          const { data: byMetadata } = await supabase
+            .from("orders")
+            .select("id, user_id")
+            .eq("id", pi.metadata.orderId)
+            .maybeSingle()
+          order = byMetadata
+        }
+        
         if (order) {
+          console.log(`[Webhook] Payment succeeded for Order ${order.id}. Linking PI ${pi.id}, moving to processing and clearing cart.`)
           await supabase
             .from("orders")
             .update({
@@ -58,6 +71,12 @@ export async function POST(req: NextRequest) {
             })
             .eq("id", order.id)
             .eq("status", "pending")
+            
+          if (order.user_id) {
+            await clearCartByUserId(supabase, order.user_id)
+          }
+        } else {
+          console.warn(`[Webhook] No order found for Payment Intent ${pi.id} (Metadata: ${JSON.stringify(pi.metadata)})`)
         }
         break
       }
@@ -67,25 +86,48 @@ export async function POST(req: NextRequest) {
         if (session.payment_status !== "paid") break
 
         const piId = session.payment_intent as string
+        const metadata = session.metadata || {}
+        const orderIdFromMetadata = metadata.orderId
 
-        // Check if order already exists
-        const { data: existingOrder } = await supabase
+        // 1. Try finding by payment_intent_id
+        let { data: existingOrder } = await supabase
           .from("orders")
-          .select("id")
+          .select("id, user_id")
           .eq("payment_intent_id", piId)
           .maybeSingle()
-
+        
+        // 2. If not found, try finding by orderId in metadata
+        if (!existingOrder && orderIdFromMetadata) {
+          console.log(`[Webhook] Session completed. Order NOT found by PI ID ${piId}. Trying metadata orderId: ${orderIdFromMetadata}`)
+          const { data: byMetadata } = await supabase
+            .from("orders")
+            .select("id, user_id")
+            .eq("id", orderIdFromMetadata)
+            .maybeSingle()
+          existingOrder = byMetadata
+        }
+        
         if (existingOrder) {
+          console.log(`[Webhook] Session completed for Order ${existingOrder.id}. Linking PI ${piId}, moving to processing and clearing cart.`)
           await supabase
             .from("orders")
-            .update({ status: "processing", updated_at: new Date().toISOString() })
+            .update({ 
+               status: "processing", 
+               payment_intent_id: piId,
+               updated_at: new Date().toISOString() 
+            })
             .eq("id", existingOrder.id)
             .eq("status", "pending")
+          
+          if (existingOrder.user_id) {
+            await clearCartByUserId(supabase, existingOrder.user_id)
+          }
           break
         }
 
-        // Create order from metadata
-        const metadata = session.metadata
+        // If no existing order, FALL THROUGH and create from metadata below
+        console.log(`[Webhook] No existing order found for session ${session.id}. Creating new order...`)
+
         if (!metadata) break
 
         const userInfo = JSON.parse(metadata.userInfo)

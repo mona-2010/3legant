@@ -6,9 +6,10 @@ import { RootState } from "@/store/store"
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { finalizeStripeOrder } from "@/lib/actions/orders"
-import { setLastOrder } from "@/store/cartSlice"
+import { setLastOrder, clearCart } from "@/store/cartSlice"
 import { toast } from "react-toastify"
 import { useRef } from "react"
+import { invalidateCartCache } from "@/lib/cart/fetchCart"
 
 export default function CompletePage() {
   const dispatch = useDispatch()
@@ -41,18 +42,22 @@ export default function CompletePage() {
       }
 
       const order = data as any
-      if (order) {
-        console.log(`[CompletePage] Current order status: ${order.status}`)
-        
-        // Success: Status is already processing/completed
-        if (order.status !== "pending") {
-          console.log(`[CompletePage] Order is confirmed. Showing details.`)
-          dispatch(setLastOrder({
-            order: order,
-            items: order.order_items
-          }))
-          setLoading(false)
-        } else {
+        if (order) {
+          console.log(`[CompletePage] Order Detail Fetched:`, { id: order.id, status: order.status, userId: order.user_id })
+          
+          // Success: Status is already processing/completed
+          if (order.status !== "pending") {
+            console.log(`[CompletePage] Order is finalized. Clearing local cart state and invalidating cache for ${order.user_id}...`)
+            if (order.user_id) {
+              invalidateCartCache(order.user_id)
+            }
+            dispatch(setLastOrder({
+              order: order,
+              items: order.order_items
+            }))
+            dispatch(clearCart())
+            setLoading(false)
+          } else {
           // Waiting: Status is still pending, subscribe to Realtime AND Poll
           console.log(`[CompletePage] Waiting for status update...`)
           
@@ -71,10 +76,13 @@ export default function CompletePage() {
                 if (updatedOrder.status !== "pending") {
                   const { data: fullOrder } = await finalizeStripeOrder(sessionId)
                   if (fullOrder) {
+                    console.log(`[Realtime] Order confirmed via Realtime. Clearing Redux cart.`)
+                    if (fullOrder.user_id) invalidateCartCache(fullOrder.user_id)
                     dispatch(setLastOrder({
                       order: fullOrder,
                       items: (fullOrder as any).order_items
                     }))
+                    dispatch(clearCart())
                     setLoading(false)
                   }
                 }
@@ -87,12 +95,14 @@ export default function CompletePage() {
              console.log(`[CompletePage] Polling for update...`)
              const { data: polledOrder } = await finalizeStripeOrder(sessionId)
              if (polledOrder && polledOrder.status !== "pending") {
-                console.log(`[Poll] Status changed: ${polledOrder.status}`)
+                console.log(`[Poll] Order confirmed via Poll. Clearing Redux cart.`)
                 clearInterval(pollInterval)
+                if (polledOrder.user_id) invalidateCartCache(polledOrder.user_id)
                 dispatch(setLastOrder({
                   order: polledOrder,
                   items: polledOrder.order_items
                 }))
+                dispatch(clearCart())
                 setLoading(false)
              }
           }, 3000)

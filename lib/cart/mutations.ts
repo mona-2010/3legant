@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client"
+import { invalidateCartCache } from "./fetchCart"
 
 type AddCartItemInput = {
   userId: string
@@ -89,6 +90,10 @@ export async function addItemToCart(input: AddCartItemInput): Promise<boolean> {
     quantity,
     color,
   })
+
+  if (!error) {
+    invalidateCartCache(input.userId)
+  }
 
   return !error
 }

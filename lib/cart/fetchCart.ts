@@ -4,6 +4,7 @@ import { CartItem } from "@/types/index"
 const CART_FETCH_TTL_MS = 1200
 const cartFetchInFlightByUser = new Map<string, Promise<CartItem[]>>()
 const cartFetchCacheByUser = new Map<string, { items: CartItem[]; at: number }>()
+const lastInvalidatedAtByUser = new Map<string, number>()
 
 export async function fetchCart(userId?: string): Promise<CartItem[]> {
   const supabase = createClient()
@@ -30,43 +31,52 @@ export async function fetchCart(userId?: string): Promise<CartItem[]> {
     return inFlight
   }
 
+  const requestStartTime = Date.now()
   const request = (async () => {
     const { data, error } = await supabase
       .from("cart_items")
       .select(`
         id,
+        product_id,
         quantity,
         color,
-        product_id,
-        cart!inner (
-          user_id
-        ),
-        products (
+        product:products (
           id,
           title,
           price,
           image,
-          stock
+          stock,
+          is_active
+        ),
+        cart!inner (
+          user_id
         )
       `)
       .eq("cart.user_id", resolvedUserId)
 
-    if (error || !data) {
+    if (error) {
+      console.error("[CartFetch] Error:", error.message)
       return []
     }
 
-    const items = data.map((item: any) => ({
-      id: item.id,
-      product_id: item.product_id,
-      name: item.products.title,
-      price: item.products.price,
-      image: item.products.image,
-      stock: item.products.stock,
-      quantity: item.quantity,
-      color: item.color || undefined
+    const items: CartItem[] = (data || []).map((row: any) => ({
+      id: row.id,
+      product_id: row.product_id,
+      name: row.product?.title || "Unknown Product",
+      image: row.product?.image || "",
+      price: row.product?.price || 0,
+      quantity: row.quantity,
+      color: row.color,
+      stock: row.product?.stock,
     }))
 
-    cartFetchCacheByUser.set(resolvedUserId, { items, at: Date.now() })
+    // Only set the cache if no invalidation happened while this request was out
+    const lastInvalidated = lastInvalidatedAtByUser.get(resolvedUserId) || 0
+    if (lastInvalidated < requestStartTime) {
+      cartFetchCacheByUser.set(resolvedUserId, { items, at: Date.now() })
+    } else {
+      console.log(`[CartCache] Skipping cache update for user ${resolvedUserId} (request started at ${requestStartTime}, invalidated at ${lastInvalidated})`)
+    }
     return items
   })()
 
@@ -75,5 +85,21 @@ export async function fetchCart(userId?: string): Promise<CartItem[]> {
     return await request
   } finally {
     cartFetchInFlightByUser.delete(resolvedUserId)
+  }
+}
+
+/**
+ * Force clear the client-side cart fetch cache for a specific user.
+ * Use this after any database cart mutation to ensure subsequent fetches are fresh.
+ */
+export function invalidateCartCache(userId: string) {
+  if (!userId) return
+
+  lastInvalidatedAtByUser.set(userId, Date.now())
+  const deletedCache = cartFetchCacheByUser.delete(userId)
+  const deletedInFlight = cartFetchInFlightByUser.delete(userId)
+  
+  if (deletedCache || deletedInFlight) {
+    console.log(`[CartCache] Invalidated cache for user ${userId}`)
   }
 }

@@ -8,6 +8,7 @@ import { PaymentRow, reserveOrderStock, releaseReservedStock, stripe, getRefundC
 import { syncSinglePaymentWithStripe, syncOrderPaymentsWithStripe, } from "@/lib/actions/stripe-sync"
 import { saveOrderAddresses } from "@/lib/actions/order-addresses"
 import { getStoreSettings } from "./settings"
+import { clearCartByUserId } from "@/lib/cart/mutations-server"
 
 const ORDER_ITEMS_SELECT = "id,order_id,product_id,product_title,product_price,product_image,product_color,quantity,created_at,products(stock,is_active)"
 const PAYMENTS_SELECT = "id,order_id,user_id,amount,currency,status,payment_method,transaction_id,stripe_payment_intent_id,processed_at,created_at,updated_at"
@@ -168,15 +169,9 @@ export async function internalCreateOrder(
     )
   }
 
-  const { data: userCart } = await supabase
-    .from("cart")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle()
-
-  if (userCart?.id && orderData.initial_payment_status === "succeeded") {
-    console.log(`[Sync] Clearing cart for completed order ${order.id}`)
-    await supabase.from("cart_items").delete().eq("cart_id", userCart.id)
+  if (order.status === "processing") {
+    console.log(`[OrderAction] Clearing cart for completed order ${order.id} (Status: ${order.status})`)
+    await clearCartByUserId(supabase, userId)
   }
 
   await saveOrderAddresses(supabase, userId, order.id, orderData.user_info)
@@ -394,43 +389,43 @@ export async function finalizeStripeOrder(sessionId: string) {
         order = existingOrder
         console.log(`[Sync] Found order in DB with status: ${order.status}`)
         
-        if (session.payment_status === "paid" && order.status === "pending") {
-          console.log(`[Sync] Verifying payment for Order ${order.id}...`)
-          const { error: updateError } = await supabase
-            .from("orders")
-            .update({ 
-              status: "processing", 
-              payment_intent_id: piId,
-              updated_at: new Date().toISOString() 
-            })
-            .eq("id", order.id)
+        if (session.payment_status === "paid") {
+          console.log(`[Sync] Payment verified for Order ${order.id}. Current status: ${order.status}`)
           
-          if (!updateError) {
-            console.log(`[Sync] Successfully updated Order ${order.id} to 'processing'`)
-            order.status = "processing"
-            order.payment_intent_id = piId
-
-            console.log(`[Sync] Updating payment status for Order ${order.id}...`)
-            await supabase
-              .from("payments")
+          if (order.status === "pending") {
+            console.log(`[Sync] Updating Order ${order.id} to 'processing'...`)
+            const { error: updateError } = await supabase
+              .from("orders")
               .update({ 
-                status: "succeeded", 
-                stripe_payment_intent_id: piId,
-                processed_at: new Date().toISOString() 
+                status: "processing", 
+                payment_intent_id: piId,
+                updated_at: new Date().toISOString() 
               })
-              .eq("order_id", order.id)
-              .eq("status", "pending")
+              .eq("id", order.id)
+            
+            if (!updateError) {
+              order.status = "processing"
+              order.payment_intent_id = piId
 
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
-              const { data: cart } = await supabase.from("cart").select("id").eq("user_id", user.id).maybeSingle()
-              if (cart) {
-                await supabase.from("cart_items").delete().eq("cart_id", cart.id)
-                console.log(`[Sync] Cart cleared for user ${user.id}`)
-              }
+              console.log(`[Sync] Updating payment record for Order ${order.id}...`)
+              await supabase
+                .from("payments")
+                .update({ 
+                  status: "succeeded", 
+                  stripe_payment_intent_id: piId,
+                  processed_at: new Date().toISOString() 
+                })
+                .eq("order_id", order.id)
+                .eq("status", "pending")
             }
-          } else {
-            console.error(`[Sync] Failed to sync status: ${updateError.message}`)
+          }
+
+          // FINAL SAFETY: Always try to clear the cart if the order is successfully paid,
+          // even if the status was already changed by the webhook.
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user && (order.status === "processing" || order.status === "completed" || order.status === "shipped")) {
+            console.log(`[Sync] Final Cart Clear trigger for user ${user.id} (Order: ${order.id}, Status: ${order.status})`)
+            await clearCartByUserId(supabase, user.id)
           }
         }
       }
