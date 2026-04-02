@@ -11,8 +11,9 @@ export async function saveOrderAddresses(
   const shipping = userInfo.shipping
   const billing = userInfo.billing
 
-  // 1. Handle Shipping Address
-  const { data: existingAddr } = await supabase
+  const adminClient = createAdminClient()
+
+  const { data: existingAddr, error: searchError } = await adminClient
     .from("user_addresses")
     .select("id")
     .eq("user_id", userId)
@@ -22,21 +23,23 @@ export async function saveOrderAddresses(
     .eq("type", "shipping")
     .maybeSingle()
 
+  if (searchError) console.error("[AddressSync] Shipping search error:", searchError.message)
+
   let shippingAddressId = existingAddr?.id || null
   if (!existingAddr) {
-    const { data: anyAddr } = await supabase
+    const { data: anyAddr } = await adminClient
       .from("user_addresses")
       .select("id")
       .eq("user_id", userId)
       .eq("type", "shipping")
       .limit(1)
 
-    const { data: newShipping } = await supabase.from("user_addresses").insert({
+    const { data: newShipping, error: insertError } = await adminClient.from("user_addresses").insert({
       user_id: userId,
       type: "shipping",
       first_name: shipping.first_name,
       last_name: shipping.last_name,
-      phone: shipping.phone || "",
+      phone: shipping.phone || userInfo.phone || "",
       street_address: shipping.street_address,
       city: shipping.city,
       state: shipping.state || "",
@@ -45,13 +48,18 @@ export async function saveOrderAddresses(
       is_default: !anyAddr || anyAddr.length === 0,
     }).select("id").single()
 
-    shippingAddressId = newShipping?.id || null
+    if (insertError) {
+      console.error("[AddressSync] Shipping insert failed:", insertError.message)
+    } else {
+      shippingAddressId = newShipping?.id || null
+      console.log(`[AddressSync] Created new shipping address ${shippingAddressId} for user ${userId}`)
+    }
   }
 
   // 2. Handle Billing Address
   let billingAddressId = null
   if (billing?.street_address) {
-    const { data: existingBilling } = await supabase
+    const { data: existingBilling, error: billSearchError } = await adminClient
       .from("user_addresses")
       .select("id")
       .eq("user_id", userId)
@@ -60,21 +68,23 @@ export async function saveOrderAddresses(
       .eq("type", "billing")
       .maybeSingle()
 
+    if (billSearchError) console.error("[AddressSync] Billing search error:", billSearchError.message)
+
     billingAddressId = existingBilling?.id || null
     if (!existingBilling) {
-      const { data: anyBilling } = await supabase
+      const { data: anyBilling } = await adminClient
         .from("user_addresses")
         .select("id")
         .eq("user_id", userId)
         .eq("type", "billing")
         .limit(1)
 
-      const { data: newBilling } = await supabase.from("user_addresses").insert({
+      const { data: newBilling, error: billInsertError } = await adminClient.from("user_addresses").insert({
         user_id: userId,
         type: "billing",
         first_name: billing.first_name,
         last_name: billing.last_name,
-        phone: billing.phone || "",
+        phone: billing.phone || userInfo.phone || "",
         street_address: billing.street_address,
         city: billing.city,
         state: billing.state || "",
@@ -83,13 +93,15 @@ export async function saveOrderAddresses(
         is_default: !anyBilling || anyBilling.length === 0,
       }).select("id").single()
 
-      billingAddressId = newBilling?.id || null
+      if (billInsertError) {
+        console.error("[AddressSync] Billing insert failed:", billInsertError.message)
+      } else {
+        billingAddressId = newBilling?.id || null
+        console.log(`[AddressSync] Created new billing address ${billingAddressId} for user ${userId}`)
+      }
     }
   }
 
-  // 3. Link addresses to the order
-  // Using admin client to bypass restrictive RLS on orders table
-  const adminClient = createAdminClient()
   const updates: any = {
     updated_at: new Date().toISOString(),
   }
@@ -97,9 +109,11 @@ export async function saveOrderAddresses(
   if (billingAddressId) updates.billing_address_id = billingAddressId
 
   if (Object.keys(updates).length > 1) {
-    await adminClient
+    const { error: errorLink } = await adminClient
       .from("orders")
       .update(updates)
       .eq("id", orderId)
+    
+    if (errorLink) console.error("[AddressSync] Linking error:", errorLink)
   }
 }

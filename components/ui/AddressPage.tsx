@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { BiEditAlt } from "react-icons/bi"
 import { FiPlus } from "react-icons/fi"
 import { RxCross1 } from "react-icons/rx"
-import { getUserAddresses, createAddress, updateAddress, deleteAddress } from "@/lib/actions/addresses"
+import { getUserAddresses, createAddress, updateAddress, deleteAddress, syncMissingAddressesFromOrders } from "@/lib/actions/addresses"
 import { UserAddress } from "@/types"
 import AddressSkeleton from "../common/AddressSkeleton"
 
@@ -15,6 +15,9 @@ const AddressPage = () => {
     const [saving, setSaving] = useState(false)
 
     const loadAddresses = async () => {
+        // Sync addresses from historical orders into user_addresses table
+        await syncMissingAddressesFromOrders()
+        
         const { data } = await getUserAddresses()
         if (data) setAddresses(data)
         setLoading(false)

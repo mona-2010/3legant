@@ -76,7 +76,7 @@ const OrdersPage = () => {
 
     const isLoadingMore = newOffset > 0
     if (isLoadingMore) setLoadingMore(true)
-    else setLoading(true)
+    else if (orders.length === 0) setLoading(true)
 
     const date = new Date()
     const dateAfter = (() => {
@@ -117,7 +117,6 @@ const OrdersPage = () => {
 
     inFlightRequestKeyRef.current = null
     lastCompletedRequestRef.current = { key: requestKey, at: Date.now() }
-    // Ignore immediate echo events from server-side sync writes triggered during this fetch.
     suppressRealtimeUntilRef.current = Date.now() + 1200
   }, [dateFilter, statusFilter])
 

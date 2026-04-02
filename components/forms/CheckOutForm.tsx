@@ -137,12 +137,27 @@ const CheckoutForm = ({
             email: submitData.email,
             phone: submitData.phone,
             shipping: {
+              first_name: submitData.firstName,
+              last_name: submitData.lastName,
+              phone: submitData.phone,
               street_address: submitData.street,
               city: submitData.city,
               state: submitData.state,
               zip_code: String(submitData.zipCode),
               country: submitData.country,
-            }
+            },
+            ...(showBilling && submitData.billingStreet ? {
+              billing: {
+                first_name: submitData.firstName,
+                last_name: submitData.lastName,
+                phone: submitData.phone,
+                street_address: submitData.billingStreet,
+                city: submitData.billingCity || "",
+                state: submitData.billingState || "",
+                zip_code: submitData.billingZipCode || "",
+                country: submitData.billingCountry || "",
+              }
+            } : {})
           },
           shippingMethod: shippingMethod as any,
           subtotal,

@@ -114,37 +114,6 @@ export default function AdminOrders() {
     setExpandedId(null)
   }, [filterStatus])
 
-  // useEffect(() => {
-  //   const supabase = createClient()
-
-  //   const handleRealtimeEvent = (payload: any) => {
-  //     const row = payload?.new ?? payload?.old ?? {}
-  //     const eventKey = `${payload?.table || "unknown"}:${payload?.eventType || "*"}:${row?.id || "unknown"}:${row?.updated_at || ""}`
-
-  //     if (lastRealtimeEventKeyRef.current === eventKey) return
-  //     lastRealtimeEventKeyRef.current = eventKey
-  //     refreshOrdersNow()
-  //   }
-
-  //   const channel = supabase
-  //     .channel(`admin-orders-sync-${Date.now()}`)
-  //     .on(
-  //       "postgres_changes",
-  //       { event: "*", schema: "public", table: "orders" },
-  //       handleRealtimeEvent,
-  //     )
-  //     .on(
-  //       "postgres_changes",
-  //       { event: "*", schema: "public", table: "payments" },
-  //       handleRealtimeEvent,
-  //     )
-  //     .subscribe()
-
-  //   return () => {
-  //     void supabase.removeChannel(channel)
-  //   }
-  // }, [refreshOrdersNow])
-
   const handleStatusChange = async (orderId: string, status: OrderStatus) => {
     const { data } = await updateOrderStatus(orderId, status)
     if (data) setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: data.status } : o))

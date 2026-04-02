@@ -306,7 +306,6 @@ export async function cancelOrder(orderId: string) {
   if (orderError || !order) return { error: "Order not found" }
   if (order.user_id !== user.id) return { error: "Not authorized" }
 
-  // 1. Restriction: Only pending or processing can be cancelled directly by user
   if (!["pending", "processing"].includes(order.status)) {
     return { error: `Direct cancellation is only available for pending or processing orders. For ${order.status} orders, please submit a Refund Request instead.` }
   }
@@ -321,8 +320,6 @@ export async function cancelOrder(orderId: string) {
   const shouldRefund = daysSinceOrder <= cancellationRefundDays
   const payment = Array.isArray(order.payments) ? order.payments[0] : order.payments
 
-  // 2. Stripe Refund (BLOCKING)
-  // If we need to refund, the Stripe API call MUST succeed before we touch our DB.
   if (shouldRefund && order.status === "processing" && payment?.stripe_payment_intent_id) {
     const { chargeId, error: chargeError } = await getRefundChargeId(payment.stripe_payment_intent_id)
     if (chargeError || !chargeId) {
@@ -342,7 +339,6 @@ export async function cancelOrder(orderId: string) {
     }
   }
 
-  // 3. Database Updates (SUCCESS ONLY)
   const now = new Date().toISOString()
   const { error: updateError } = await supabase
     .from("orders")
@@ -351,17 +347,14 @@ export async function cancelOrder(orderId: string) {
 
   if (updateError) return { error: updateError.message }
 
-  // Restock items
   await restockOrder(supabase, orderId)
 
-  // Update payment record status
   if (shouldRefund && order.status === "processing") {
     await supabase
       .from("payments")
       .update({ status: "refunded", updated_at: now })
       .eq("order_id", orderId)
   } else {
-    // If it was just 'pending' OR outside the refund window, mark payment as cancelled
     await supabase
       .from("payments")
       .update({ status: "cancelled", updated_at: now })
@@ -384,7 +377,6 @@ export async function finalizeStripeOrder(sessionId: string) {
     const session = await stripe.checkout.sessions.retrieve(sessionId)
     const piId = session.payment_intent as string
     
-    // Check metadata first (Modern Flow)
     const metadata = session.metadata
     const orderIdFromMetadata = metadata?.orderId
 
@@ -402,7 +394,6 @@ export async function finalizeStripeOrder(sessionId: string) {
         order = existingOrder
         console.log(`[Sync] Found order in DB with status: ${order.status}`)
         
-        // CRITICAL SYNC: If session is paid but DB is pending, update it immediately
         if (session.payment_status === "paid" && order.status === "pending") {
           console.log(`[Sync] Verifying payment for Order ${order.id}...`)
           const { error: updateError } = await supabase
@@ -419,7 +410,6 @@ export async function finalizeStripeOrder(sessionId: string) {
             order.status = "processing"
             order.payment_intent_id = piId
 
-            // Sync the Payments record as well
             console.log(`[Sync] Updating payment status for Order ${order.id}...`)
             await supabase
               .from("payments")
@@ -431,7 +421,6 @@ export async function finalizeStripeOrder(sessionId: string) {
               .eq("order_id", order.id)
               .eq("status", "pending")
 
-            // Clear the cart on successful sync
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
               const { data: cart } = await supabase.from("cart").select("id").eq("user_id", user.id).maybeSingle()
@@ -447,7 +436,6 @@ export async function finalizeStripeOrder(sessionId: string) {
       }
     }
 
-    // Fallback: Check for order by payment_intent_id
     if (!order && piId) {
       const { data: existingByPi } = await supabase
         .from("orders")
@@ -462,7 +450,6 @@ export async function finalizeStripeOrder(sessionId: string) {
       return { data: order }
     }
 
-    // Last Resort: Create order from metadata (if it didn't exist before)
     if (!metadata) return { error: "Missing metadata" }
 
     const userInfo = JSON.parse(metadata.userInfo)
@@ -491,7 +478,6 @@ export async function finalizeStripeOrder(sessionId: string) {
 
     if (orderResult.error) return { error: orderResult.error }
 
-    // Fetch order with items
     const { data: newOrder } = await supabase
       .from("orders")
       .select("*, order_items(*)")

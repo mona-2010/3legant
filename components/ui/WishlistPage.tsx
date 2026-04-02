@@ -75,7 +75,10 @@ const WishlistPage = () => {
   }
 
   useEffect(() => {
-    setLoading(true)
+    // Only show full loading skeleton if we have no items yet.
+    if (items.length === 0) {
+      setLoading(true)
+    }
     fetchWishlist()
   }, [user])
 

@@ -66,7 +66,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     //    Supabase auto-refresh timer. Dispatch initAuth() which calls getUser()
     //    and forces a server-side token refresh if the access token has expired.
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      // Background refresh: Only if visible AND not already checking.
+      if (document.visibilityState === 'visible' && !loading) {
         dispatch(initAuth())
       }
     }

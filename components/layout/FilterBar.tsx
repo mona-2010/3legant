@@ -41,7 +41,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
     }
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="sticky top-20 flex flex-col gap-8">
             <div className="overflow-auto h-50">
                 <h4 className="uppercase text-sm font-semibold mb-4">Categories</h4>
                 <div className="flex flex-col gap-2">

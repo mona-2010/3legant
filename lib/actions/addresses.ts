@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { UserAddress } from "@/types"
+import { saveOrderAddresses } from "./order-addresses"
 
 export async function getUserAddresses() {
   const supabase = createClient(cookies())
@@ -20,13 +21,41 @@ export async function getUserAddresses() {
   return { data: data as UserAddress[], error: null }
 }
 
+export async function syncMissingAddressesFromOrders() {
+  const supabase = createClient(cookies())
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return { success: false, error: "Not authenticated" }
+
+  const { data: orders, error: ordersError } = await supabase
+    .from("orders")
+    .select("id, user_info")
+    .eq("user_id", user.id)
+
+  if (ordersError) {
+    console.error("[AddressSync] Failed to fetch orders for sync:", ordersError.message)
+    return { success: false, error: ordersError.message }
+  }
+
+  if (!orders || orders.length === 0) return { success: true }
+
+  console.log(`[AddressSync] Starting sync for ${orders.length} orders for user ${user.id}`)
+
+  for (const order of orders) {
+    if (order.user_info) {
+      await saveOrderAddresses(supabase, user.id, order.id, order.user_info as any)
+    }
+  }
+
+  return { success: true }
+}
+
 export async function createAddress(address: Omit<UserAddress, "id" | "user_id" | "created_at" | "updated_at">) {
   const supabase = createClient(cookies())
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return { data: null, error: "Not authenticated" }
 
-  // If setting as default, unset other defaults of same type
   if (address.is_default) {
     await supabase
       .from("user_addresses")

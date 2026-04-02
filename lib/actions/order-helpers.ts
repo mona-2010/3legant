@@ -71,7 +71,6 @@ export async function reserveOrderStock(supabase: ReturnType<typeof createClient
   for (const [productId, quantity] of requestedByProduct.entries()) {
     let reserved = false
     for (let attempt = 0; attempt < 3; attempt++) {
-      // Use admin client for reading stock too to ensure consistency
       const { data: product, error: productError } = await adminClient.from("products").select("id, title, stock, is_active").eq("id", productId).single()
       if (productError || !product) return { data: null, error: `Product not found for item ${productId}`, reservedItems }
       if ((product.stock || 0) < quantity) return { data: null, error: `Insufficient stock for ${product.title || "this product"}. Available: ${product.stock || 0}, requested: ${quantity}`, reservedItems }
@@ -100,7 +99,6 @@ export async function releaseReservedStock(supabase: ReturnType<typeof createCli
 
 export async function restockOrder(supabase: ReturnType<typeof createClient>, orderId: string) {
   const adminClient = createAdminClient()
-  // 1. Fetch order items and coupon_id
   const { data: order, error: orderError } = await adminClient
     .from("orders")
     .select("id, coupon_id, order_items(product_id, quantity)")
@@ -109,7 +107,6 @@ export async function restockOrder(supabase: ReturnType<typeof createClient>, or
 
   if (orderError || !order) return { error: orderError?.message || "Order not found" }
 
-  // 2. Restock products
   const items = order.order_items as { product_id: string; quantity: number }[]
   if (items && items.length > 0) {
     for (const item of items) {
@@ -132,7 +129,6 @@ export async function restockOrder(supabase: ReturnType<typeof createClient>, or
     }
   }
 
-  // 3. Restock coupon
   if (order.coupon_id) {
     const { data: coupon } = await adminClient
       .from("coupons")

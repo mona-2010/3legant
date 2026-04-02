@@ -24,7 +24,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
     router.push("/")
   }
 
-  if (loading) return <p className="text-center py-20">Loading...</p>
+  if (loading && !user) return <p className="text-center py-20">Loading...</p>
   if (!user) return null
 
   return (
