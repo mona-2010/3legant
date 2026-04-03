@@ -21,8 +21,10 @@ const ForgotPwdForm = () => {
             return;
         }
 
+        const redirectUrl = `${window.location.origin}/reset`
+
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: "http://localhost:3000/reset"
+            redirectTo: redirectUrl
         })
         if (error) {
             alert(error.message);
@@ -30,7 +32,7 @@ const ForgotPwdForm = () => {
     }
 
     return (
-        <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-10 md:ml-25 text-gray-200">
+        <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 md:ml-10 lg:ml-25 text-gray-200">
             <h1 className="font-poppins text-[40px] mb-15  font-[500] text-[#141718] leading-10">
                 Forgot Password?
             </h1>

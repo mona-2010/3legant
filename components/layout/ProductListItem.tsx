@@ -117,7 +117,9 @@ export default function ProductListItem({ product, grid, liked, onWishlist, onAd
         <div className="flex flex-col flex-1">
           <StarRating rating={Math.round((rating || 0) * 2) / 2} />
           <p className="text-lg font-semibold mt-1 line-clamp-1">{title}</p>
-          {description && <p className="text-sm text-gray-600 mt-1 line-clamp-1">{description}</p>}
+          <div className="hidden md:block">
+            {description && <p className="text-sm text-gray-600 mt-1 line-clamp-1 md:line-clamp-2">{description}</p>}
+          </div>
           {priceBlock}
           <div className="w-full">
             <button

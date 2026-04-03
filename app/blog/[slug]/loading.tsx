@@ -8,10 +8,12 @@ export default function Loading() {
     return (
         <div>
             <Header />
-            <div className='my-10'>
-                <BlogDetailSkeleton />
+            <div className="page-content-container">
+                <div className='my-10'>
+                    <BlogDetailSkeleton />
+                </div>
+                <Newsletter />
             </div>
-            <Newsletter />
             <Footer />
         </div>
     )

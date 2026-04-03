@@ -412,7 +412,7 @@ const OrdersPage = () => {
               <button
                 onClick={handleShowMore}
                 disabled={loadingMore}
-                className="w-30 px-1 py-2.5 text-black border rounded-full hover:bg-black hover:text-white rounded-full font-medium text-sm transition flex items-center justify-center gap-2"
+                className="cursor-pointer w-30 px-1 py-2.5 text-black border rounded-full hover:bg-black hover:text-white rounded-full font-medium text-sm transition flex items-center justify-center gap-2"
               >
                 {loadingMore ? (
                   <AiOutlineLoading className="animate-spin" />

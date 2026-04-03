@@ -37,8 +37,8 @@ export async function saveOrderAddresses(
     const { data: newShipping, error: insertError } = await adminClient.from("user_addresses").insert({
       user_id: userId,
       type: "shipping",
-      first_name: shipping.first_name,
-      last_name: shipping.last_name,
+      first_name: shipping.first_name || "N/A",
+      last_name: shipping.last_name || "N/A",
       phone: shipping.phone || userInfo.phone || "",
       street_address: shipping.street_address,
       city: shipping.city,
@@ -82,8 +82,8 @@ export async function saveOrderAddresses(
       const { data: newBilling, error: billInsertError } = await adminClient.from("user_addresses").insert({
         user_id: userId,
         type: "billing",
-        first_name: billing.first_name,
-        last_name: billing.last_name,
+        first_name: billing.first_name || "N/A",
+        last_name: billing.last_name || "N/A",
         phone: billing.phone || userInfo.phone || "",
         street_address: billing.street_address,
         city: billing.city,

@@ -13,14 +13,16 @@ const HomePage = () => {
     <div>
         <NavigationHeader/>
         <Header/>
-        <ImageSlider/>
-        <TitleGrid/>
-        <BannerGrid/>
-        <ProductCarousel/>
-        <Values/>
-        <Banner/>
-        <Blog/>
-        <Newsletter/>
+        <div className="page-content-container">
+          <ImageSlider/>
+          <TitleGrid/>
+          <BannerGrid/>
+          <ProductCarousel/>
+          <Values/>
+          <Banner/>
+          <Blog/>
+          <Newsletter/>
+        </div>
         <Footer/>
         
     </div>

@@ -41,22 +41,23 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
     return (
         <div>
             <Header />
-            <div
-                className='mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] flex justify-center items-center bg-cover min-h-[200px] lg:min-h-[400px] max-h-[392px]'
-                style={{
-                    backgroundImage: `url(${bgimage.src})`
-                }}
-            >
-                <div className='flex flex-col w-full justify-center mx-auto items-center'>
-                    <Breadcrumb currentPage='Blog' />
-                    <h1 className='my-5 font-poppins text-[24px] md:text-[36px] lg:text-[54px] font-[500]'>
-                        Our Blog
-                    </h1>
-                    <p className='text-center text-[12px] md:text-[16px] lg:text-[20px] text-[#121212]'>
-                        Home ideas and design inspiration
-                    </p>
+            <div className="page-content-container">
+                <div
+                    className='mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] flex justify-center items-center bg-cover min-h-[200px] lg:min-h-[400px] max-h-[392px]'
+                    style={{
+                        backgroundImage: `url(${bgimage.src})`
+                    }}
+                >
+                    <div className='flex flex-col w-full justify-center mx-auto items-center'>
+                        <Breadcrumb currentPage='Blog' />
+                        <h1 className='my-5 font-poppins text-[24px] md:text-[36px] lg:text-[54px] font-[500]'>
+                            Our Blog
+                        </h1>
+                        <p className='text-center text-[12px] md:text-[16px] lg:text-[20px] text-[#121212]'>
+                            Home ideas and design inspiration
+                        </p>
+                    </div>
                 </div>
-            </div>
 
             <div className="mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] mt-10 flex flex-col md:flex-row md:items-center md:justify-between">
                 <div className="flex gap-6 text-[16px] font-medium">
@@ -95,13 +96,13 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                             setActiveTab(value)
                             setVisibleCount(value === "featured" ? 3 : 6)
                         }}
-                        className="px-4 py-2 text-[16px] focus:outline-none "
+                        className="w-full md:w-auto px-4 py-2 text-[16px] focus:outline-none border md:border-0 rounded-md"
                     >
                         <option value="all">All Blog</option>
                         <option value="featured">Featured</option>
                     </select>
 
-                    <div className="flex text-xl bg-white rounded-md p-1 gap-2">
+                    <div className="md:flex text-xl rounded-md p-1 gap-2 hidden md:block">
                         <button
                             onClick={() => setView("grid3")}
                             className={`hidden sm:hidden md:block cursor-pointer p-1
@@ -186,7 +187,8 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                     </button>
                 </div>
             )}
-            <Newsletter />
+                <Newsletter />
+            </div>
             <Footer />
         </div>
     )

@@ -52,9 +52,11 @@ export default function CartLayout({ children }: { children: React.ReactNode }) 
   return (
     <div>
       <Header />
-      <h1 className="mt-5 md:mt-10 font-poppins text-center text-[30px] md:text-[36px] lg:text-[54px]">{pageHeading}</h1>
-      <StepIndicator activeStep={activeStep} />
-      {children}
+      <div className="page-content-container">
+        <h1 className="mt-5 md:mt-10 font-poppins text-center text-[30px] md:text-[36px] lg:text-[54px]">{pageHeading}</h1>
+        <StepIndicator activeStep={activeStep} />
+        {children}
+      </div>
       <Footer />
     </div>
   )

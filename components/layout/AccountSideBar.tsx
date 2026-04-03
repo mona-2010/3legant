@@ -149,7 +149,7 @@ const AccountSidebar = ({ user, onLogout, children }: Props) => {
             <button
               key={tab.label}
               onClick={() => router.push(tab.href)}
-              className={`text-left py-2.5 px-4 border-b-2 transition-colors ${isActive(tab.href)
+              className={`cursor-pointer text-left py-2.5 px-4 border-b-2 transition-colors ${isActive(tab.href)
                 ? "border-current"
                 : "border-transparent hover:border-gray-300 text-gray-700"
                 }`}
@@ -160,7 +160,7 @@ const AccountSidebar = ({ user, onLogout, children }: Props) => {
 
           <button
             onClick={onLogout}
-            className="text-left py-2.5 px-4 text-red-600 border-b-2 border-transparent hover:border-red-600"
+            className="cursor-pointer text-left py-2.5 px-4 text-red-600 border-b-2 border-transparent hover:border-red-600"
           >
             Log Out
           </button>

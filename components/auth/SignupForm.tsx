@@ -66,7 +66,6 @@ const SignupForm = () => {
 
   return (
     <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-10 md:ml-25 text-gray-200">
-
       <h1 className="font-poppins text-[40px] font-[500] text-[#141718] leading-10">
         Sign up
       </h1>

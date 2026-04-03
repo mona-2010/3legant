@@ -274,7 +274,7 @@ const AccountPage = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="max-w-lg mt-3 bg-black text-white px-9 py-2.5 rounded-lg"
+              className="cursor-pointer max-w-lg mt-3 bg-black text-white px-9 py-2.5 rounded-lg"
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </button>

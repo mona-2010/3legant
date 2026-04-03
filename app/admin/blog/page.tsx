@@ -28,6 +28,11 @@ export default function AdminBlogs() {
 
   const supabase = createClient()
 
+  const normalizeGalleryToThree = (paths?: string[] | null) => {
+    const cleaned = (paths || []).filter((path) => path && path.trim())
+    return [...cleaned.slice(0, 3), "", "", ""].slice(0, 3)
+  }
+
   const loadBlogs = async () => {
     const { data } = await getAdminBlogs()
     if (data) setBlogs(data)
@@ -55,7 +60,7 @@ export default function AdminBlogs() {
       slug: blog.slug,
       excerpt: blog.excerpt || "",
       cover_image_path: blog.cover_image_path || "",
-      gallery_image_paths: blog.gallery_image_paths && blog.gallery_image_paths.length > 0 ? blog.gallery_image_paths : ["", "", ""],
+      gallery_image_paths: normalizeGalleryToThree(blog.gallery_image_paths),
       author: blog.author || "",
       published_at: blog.published_at ? new Date(blog.published_at).toISOString().slice(0, 16) : "",
       is_published: blog.is_published,
@@ -103,14 +108,43 @@ export default function AdminBlogs() {
     }
 
     if (slot === "cover") {
+      if (form.cover_image_path) {
+        await supabase.storage.from(BLOG_IMAGES_BUCKET).remove([form.cover_image_path])
+      }
       setForm((prev) => ({ ...prev, cover_image_path: objectPath }))
       return
     }
 
     if (slot === "gallery" && index !== undefined) {
+      const oldPath = form.gallery_image_paths[index]
+      if (oldPath) {
+        await supabase.storage.from(BLOG_IMAGES_BUCKET).remove([oldPath])
+      }
       setForm((prev) => {
         const updated = [...prev.gallery_image_paths]
         updated[index] = objectPath
+        return { ...prev, gallery_image_paths: updated }
+      })
+    }
+  }
+
+  const handleRemoveImage = async (slot: BlogImageSlot, index?: number) => {
+    if (slot === "cover") {
+      if (form.cover_image_path) {
+        await supabase.storage.from(BLOG_IMAGES_BUCKET).remove([form.cover_image_path])
+      }
+      setForm((prev) => ({ ...prev, cover_image_path: "" }))
+      return
+    }
+
+    if (slot === "gallery" && index !== undefined) {
+      const existingPath = form.gallery_image_paths[index]
+      if (existingPath) {
+        await supabase.storage.from(BLOG_IMAGES_BUCKET).remove([existingPath])
+      }
+      setForm((prev) => {
+        const updated = [...prev.gallery_image_paths]
+        updated[index] = ""
         return { ...prev, gallery_image_paths: updated }
       })
     }
@@ -131,8 +165,8 @@ export default function AdminBlogs() {
     }
 
     const filledGalleryImages = form.gallery_image_paths.filter((path) => path.trim())
-    if (filledGalleryImages.length < 3) {
-      setSaveError("Please upload at least 3 gallery images.")
+    if (filledGalleryImages.length !== 3) {
+      setSaveError("Please upload exactly 3 gallery images.")
       return
     }
 
@@ -346,6 +380,7 @@ export default function AdminBlogs() {
           uploadingSlot={uploadingSlot}
           uploadingIndex={uploadingIndex}
           onUploadImage={handleUploadImage}
+          onRemoveImage={handleRemoveImage}
           onSave={handleSave}
           onClose={() => setIsModalOpen(false)}
         />

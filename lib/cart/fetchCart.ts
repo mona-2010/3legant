@@ -55,7 +55,6 @@ export async function fetchCart(userId?: string): Promise<CartItem[]> {
       .eq("cart.user_id", resolvedUserId)
 
     if (error) {
-      console.error("[CartFetch] Error:", error.message)
       return []
     }
 
@@ -70,12 +69,10 @@ export async function fetchCart(userId?: string): Promise<CartItem[]> {
       stock: row.product?.stock,
     }))
 
-    // Only set the cache if no invalidation happened while this request was out
     const lastInvalidated = lastInvalidatedAtByUser.get(resolvedUserId) || 0
     if (lastInvalidated < requestStartTime) {
       cartFetchCacheByUser.set(resolvedUserId, { items, at: Date.now() })
     } else {
-      console.log(`[CartCache] Skipping cache update for user ${resolvedUserId} (request started at ${requestStartTime}, invalidated at ${lastInvalidated})`)
     }
     return items
   })()
@@ -100,6 +97,5 @@ export function invalidateCartCache(userId: string) {
   const deletedInFlight = cartFetchInFlightByUser.delete(userId)
   
   if (deletedCache || deletedInFlight) {
-    console.log(`[CartCache] Invalidated cache for user ${userId}`)
   }
 }

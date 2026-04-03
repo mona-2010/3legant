@@ -2,10 +2,15 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
+import { cache } from "react"
 import { UserAddress } from "@/types"
 import { saveOrderAddresses } from "./order-addresses"
 
-export async function getUserAddresses() {
+// In-memory cache to prevent duplicate syncs in the same session
+const syncedUsers = new Set<string>()
+
+// Memoize getUserAddresses at request level to deduplicate calls within same render
+const getUserAddressesInternal = cache(async () => {
   const supabase = createClient(cookies())
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -19,6 +24,10 @@ export async function getUserAddresses() {
 
   if (error) return { data: null, error: error.message }
   return { data: data as UserAddress[], error: null }
+})
+
+export async function getUserAddresses() {
+  return getUserAddressesInternal()
 }
 
 export async function syncMissingAddressesFromOrders() {
@@ -26,6 +35,13 @@ export async function syncMissingAddressesFromOrders() {
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return { success: false, error: "Not authenticated" }
+
+  // Skip if already synced in this session
+  if (syncedUsers.has(user.id)) {
+    return { success: true, skipped: true }
+  }
+
+  syncedUsers.add(user.id)
 
   const { data: orders, error: ordersError } = await supabase
     .from("orders")

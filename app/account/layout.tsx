@@ -30,10 +30,12 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   return (
     <div>
       <Header />
-      <h1 className="text-center font-poppins text-[30px] md:text-[36px] lg:text-[54px] font-[500] my-[40px]">My Account</h1>
-      <AccountSidebar user={user} onLogout={handleLogout}>
-        {children}
-      </AccountSidebar>
+      <div className="page-content-container">
+        <h1 className="text-center font-poppins text-[30px] md:text-[36px] lg:text-[54px] font-[500] my-[40px]">My Account</h1>
+        <AccountSidebar user={user} onLogout={handleLogout}>
+          {children}
+        </AccountSidebar>
+      </div>
       <Footer />
     </div>
   )

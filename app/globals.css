@@ -62,9 +62,15 @@
 
 body {
   /* font-family: font-inter; */
-  max-width: 1600px;
-  margin: auto;
+  width: 100%;
   overflow-x: hidden;
+}
+
+.page-content-container {
+  width: 100%;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .pagination .swiper-pagination-bullet {

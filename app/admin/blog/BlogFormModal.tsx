@@ -62,6 +62,7 @@ type Props = {
   uploadingSlot: BlogImageSlot | null
   uploadingIndex?: number
   onUploadImage: (slot: BlogImageSlot, file: File, index?: number) => Promise<void>
+  onRemoveImage: (slot: BlogImageSlot, index?: number) => Promise<void>
   onSave: () => void
   onClose: () => void
 }
@@ -79,30 +80,40 @@ export default function BlogFormModal({
   uploadingSlot,
   uploadingIndex,
   onUploadImage,
+  onRemoveImage,
   onSave,
   onClose,
 }: Props) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [draggedZone, setDraggedZone] = useState<string | null>(null)
 
-  const handleDragEnter = (e: React.DragEvent, zone: string) => {
+  const handleDragEnter = (zone: string) => (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDraggedZone(zone)
   }
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragOver = (zone: string) => (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    setDraggedZone(null)
+    if (draggedZone !== zone) {
+      setDraggedZone(zone)
+    }
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragLeave = (zone: string) => (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
+    const related = e.relatedTarget as Node | null
+    if (related && e.currentTarget.contains(related)) {
+      return
+    }
+    if (draggedZone === zone) {
+      setDraggedZone(null)
+    }
   }
 
-  const handleDropCover = async (e: React.DragEvent) => {
+  const handleDrop = (slot: BlogImageSlot, index?: number) => async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDraggedZone(null)
@@ -111,19 +122,8 @@ export default function BlogFormModal({
     if (!file || !ALLOWED_TYPES.includes(file.type)) {
       return
     }
-    await onUploadImage("cover", file)
-  }
 
-  const handleDropGallery = (idx: number) => async (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDraggedZone(null)
-
-    const file = e.dataTransfer.files?.[0]
-    if (!file || !ALLOWED_TYPES.includes(file.type)) {
-      return
-    }
-    await onUploadImage("gallery", file, idx)
+    await onUploadImage(slot, file, index)
   }
 
   const imageUrls = useMemo(() => {
@@ -272,10 +272,10 @@ export default function BlogFormModal({
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-semibold text-gray-700">Cover Image (Bucket Upload) *</label>
               <div
-                onDragEnter={(e) => handleDragEnter(e, "cover")}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDropCover}
+                onDragEnter={handleDragEnter("cover")}
+                onDragOver={handleDragOver("cover")}
+                onDragLeave={handleDragLeave("cover")}
+                onDrop={handleDrop("cover")}
                 className={`border-2 border-dashed rounded-xl p-4 text-center transition-colors ${
                   draggedZone === "cover"
                     ? "border-black bg-black/5"
@@ -294,49 +294,52 @@ export default function BlogFormModal({
                   }}
                   className="hidden"
                 />
-                <label htmlFor="cover-input" className="block cursor-pointer">
-                  <p className="text-sm text-gray-700 font-medium">Drag and drop your cover image here</p>
-                  <p className="text-xs text-gray-500 mt-1">or click to browse (PNG, JPG, WEBP)</p>
+                <label htmlFor="cover-input" className="block cursor-pointer pointer-events-none">
+                  <p className="text-sm text-gray-700 font-medium">Drag image here or click to upload cover image</p>
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP</p>
                 </label>
               </div>
-              <p className="text-xs text-gray-500">{form.cover_image_path || "No cover image uploaded yet"}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-gray-500 break-all">{form.cover_image_path || "No cover image uploaded yet"}</p>
+                {form.cover_image_path && (
+                  <button
+                    type="button"
+                    onClick={() => void onRemoveImage("cover")}
+                    className="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1.5 md:col-span-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-700">Gallery Images (Min: 3) *</label>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, gallery_image_paths: [...form.gallery_image_paths, ""] })}
-                  className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors text-gray-700"
-                >
-                  + Add Image
-                </button>
+                <label className="text-sm font-semibold text-gray-700">Gallery Images (Exactly 3) *</label>
               </div>
               <div className="space-y-2">
-                {form.gallery_image_paths.map((path, idx) => (
+                {[0, 1, 2].map((idx) => {
+                  const path = form.gallery_image_paths[idx] || ""
+                  return (
                   <div key={idx} className="space-y-1.5 border border-gray-100 rounded-lg p-3">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-medium text-gray-600">Gallery Image {idx + 1}</label>
-                      {form.gallery_image_paths.length > 3 && (
+                      {path && (
                         <button
                           type="button"
-                          onClick={() => {
-                            const updated = form.gallery_image_paths.filter((_, i) => i !== idx)
-                            setForm({ ...form, gallery_image_paths: updated })
-                          }}
+                          onClick={() => void onRemoveImage("gallery", idx)}
                           className="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                         >
-                          Remove
+                          Delete
                         </button>
                       )}
                     </div>
                     <div
-                      onDragEnter={(e) => handleDragEnter(e, `gallery-${idx}`)}
-                      onDragLeave={handleDragLeave}
-                      onDragOver={handleDragOver}
-                      onDrop={handleDropGallery(idx)}
-                      className={`border-2 border-dashed rounded-xl p-3 text-center transition-colors ${
+                      onDragEnter={handleDragEnter(`gallery-${idx}`)}
+                      onDragOver={handleDragOver(`gallery-${idx}`)}
+                      onDragLeave={handleDragLeave(`gallery-${idx}`)}
+                      onDrop={handleDrop("gallery", idx)}
+                      className={`border-2 border-dashed rounded-xl p-5 text-center transition-colors ${
                         draggedZone === `gallery-${idx}`
                           ? "border-black bg-black/5"
                           : "border-gray-200 bg-gray-50/50 hover:border-gray-300"
@@ -357,8 +360,8 @@ export default function BlogFormModal({
                         disabled={uploadingSlot === "gallery" && uploadingIndex === idx}
                         className="hidden"
                       />
-                      <label htmlFor={`gallery-input-${idx}`} className="block cursor-pointer">
-                        <p className="text-xs text-gray-700 font-medium">Drag image here or click to browse</p>
+                      <label htmlFor={`gallery-input-${idx}`} className="block cursor-pointer pointer-events-none">
+                        <p className="text-xs text-gray-700 font-medium">Drag image here or click to upload/replace image</p>
                       </label>
                     </div>
                     {uploadingSlot === "gallery" && uploadingIndex === idx && (
@@ -371,7 +374,7 @@ export default function BlogFormModal({
                       <p className="text-xs text-gray-500">{path.split("/").pop() || path}</p>
                     )}
                   </div>
-                ))}
+                )})}
               </div>
             </div>
 

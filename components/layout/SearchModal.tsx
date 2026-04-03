@@ -81,13 +81,13 @@ export default function SearchModal({ open, setOpen }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/30 transition-opacity duration-300"
+      className="fixed inset-0 z-[100] w-full h-fit flex justify-center bg-background shadow-lg transition-opacity duration-300"
       style={{ overflowY: "auto" }}
     >
       <div
         ref={modalRef}
-        className="w-[90%] max-w-[600px] mt-8 rounded-lg p-6 bg-background shadow-lg transition-transform duration-300 transform animate-slide-down"
-        style={{ maxHeight: "70vh", overflowY: "auto", marginTop: 0, animation: open ? "slideDown 0.35s cubic-bezier(0.4,0,0.2,1)" : "none" }}
+        className="w-[600px] mt-8 rounded-lg p-6 transition-transform duration-300 transform animate-slide-down"
+        style={{overflowY: "auto", marginTop: 0, animation: open ? "slideDown 0.35s cubic-bezier(0.4,0,0.2,1)" : "none" }}
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Search Products</h2>

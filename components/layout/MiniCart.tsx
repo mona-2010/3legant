@@ -134,7 +134,7 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
                       <button
                         onClick={() => updateQuantity(item.id, "dec")}
                         disabled={item.quantity <= 1}
-                        className={item.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""}
+                        className={item.quantity <= 1 ? "cursor-pointer opacity-50" : "cursor-pointer"}
                       >
                         −
                       </button>
@@ -144,7 +144,7 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
                       <button
                         onClick={() => updateQuantity(item.id, "inc")}
                         disabled={typeof item.stock === "number" && item.quantity >= item.stock}
-                        className={typeof item.stock === "number" && item.quantity >= item.stock ? "opacity-50 cursor-not-allowed" : ""}
+                        className={typeof item.stock === "number" && item.quantity >= item.stock ? "cursor-pointer opacity-50" : "cursor-pointer"}
                       >
                         +
                       </button>

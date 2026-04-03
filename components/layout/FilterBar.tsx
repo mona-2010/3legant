@@ -26,18 +26,27 @@ const FilterBar: React.FC<FilterBarProps> = ({
     selectedPrices,
     setSelectedPrices,
 }) => {
+    const individualPrices = prices.filter((price) => price !== "all")
+    const areAllIndividualPricesSelected = individualPrices.every((price) => selectedPrices.includes(price))
 
     const handlePriceChange = (price: string) => {
         if (price === "all") {
-            setSelectedPrices(["all"])
+            setSelectedPrices((prev) => {
+                const isAllCurrentlySelected = prev.includes("all") || individualPrices.every((value) => prev.includes(value))
+                if (isAllCurrentlySelected) return []
+                return ["all", ...individualPrices]
+            })
             return
         }
 
-        setSelectedPrices((prev) =>
-            prev.includes(price)
-                ? prev.filter((p) => p !== price)
-                : [...prev.filter(p => p !== "all"), price]
-        )
+        setSelectedPrices((prev) => {
+            const nextSelected = prev.includes(price)
+                ? prev.filter((p) => p !== price && p !== "all")
+                : [...prev.filter((p) => p !== "all"), price]
+
+            const allChecked = individualPrices.every((value) => nextSelected.includes(value))
+            return allChecked ? ["all", ...individualPrices] : nextSelected
+        })
     }
 
     return (
@@ -73,7 +82,11 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
                             <input
                                 type="checkbox"
-                                checked={selectedPrices.includes(price)}
+                                checked={
+                                    price === "all"
+                                        ? selectedPrices.includes("all") || areAllIndividualPricesSelected
+                                        : selectedPrices.includes("all") || selectedPrices.includes(price)
+                                }
                                 onChange={() => handlePriceChange(price)}
                                 className="w-5 h-5 rounded-md border border-gray-400 appearance-none cursor-pointer relative
                                 before:content-[''] before:absolute before:inset-0 before:flex before:items-center before:justify-center

@@ -68,7 +68,7 @@ const SigninForm = () => {
         </Link>
       </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="w-full mr-auto">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full mr-auto">
         <div className="border-b border-lightgray pb-2">
           <input
             type="email"

@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { BiEditAlt } from "react-icons/bi"
 import { FiPlus } from "react-icons/fi"
 import { RxCross1 } from "react-icons/rx"
@@ -13,17 +13,23 @@ const AddressPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingAddress, setEditingAddress] = useState<Partial<UserAddress> | null>(null)
     const [saving, setSaving] = useState(false)
+    const hasLoadedRef = useRef(false)
 
     const loadAddresses = async () => {
-        // Sync addresses from historical orders into user_addresses table
-        await syncMissingAddressesFromOrders()
-        
+        // Load addresses immediately without waiting for sync
         const { data } = await getUserAddresses()
         if (data) setAddresses(data)
         setLoading(false)
+        
+        // Sync addresses from historical orders in background (non-blocking)
+        syncMissingAddressesFromOrders().catch(err => console.error("Address sync error:", err))
     }
 
-    useEffect(() => { loadAddresses() }, [])
+    useEffect(() => {
+        if (hasLoadedRef.current) return
+        hasLoadedRef.current = true
+        loadAddresses()
+    }, [])
 
     const handleEdit = (item: UserAddress) => {
         setEditingAddress({ ...item })
@@ -84,7 +90,7 @@ const AddressPage = () => {
     if (loading) return <AddressSkeleton />
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col py-4">
             <div className="flex items-center justify-between pb-5 gap-5 md:gap-10">
                 <h2 className="text-[20px] font-[600]">Address</h2>
                 <button

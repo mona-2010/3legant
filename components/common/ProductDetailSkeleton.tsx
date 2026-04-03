@@ -10,7 +10,7 @@ export default function ProductDetailSkeleton() {
         <div className="flex flex-col md:flex-row gap-15">
           <div className="flex flex-col gap-1 md:w-1/2">
             <div className="relative w-full h-[420px] sm:h-[520px] lg:h-[600px] bg-gray-200 rounded animate-pulse mb-4" />
-            <div className="flex justify-between items-center gap-2 mt-2">
+            <div className="hidden md:flex justify-between items-center gap-2 mt-2">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="w-30 h-30 bg-gray-200 rounded animate-pulse" />
               ))}

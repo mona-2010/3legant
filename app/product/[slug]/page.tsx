@@ -169,49 +169,51 @@ export default function ProductDetailPage() {
         <div>
             <NavigationHeader />
             <Header />
-            <div className="mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px]">
-                <div className="my-[16px]">
-                    <Breadcrumb
-                        currentPage={product.title}
-                        crumbs={[
-                            { title: "Shop", href: "/shop" },
-                            { title: product.category?.[0], href: `/shop?category=${product.category?.[0]}` },
-                        ]}
-                    />
-                </div>
-                <div className="flex flex-col md:flex-row gap-8 md:gap-10 lg:gap-15">
-                    <div className="flex flex-col gap-1 md:w-1/2">
-                        <ProductImageGallery
-                            images={productImages.length > 0 ? productImages : product.image ? [product.image] : []}
-                            price={product.price}
-                            originalPrice={effectiveOriginalPrice}
-                            valid_until={product.valid_until}
-                            isNew={product.is_new}
-                            colorHex={selectedColorHex}
+            <div className="page-content-container">
+                <div className="mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px]">
+                    <div className="my-[16px]">
+                        <Breadcrumb
+                            currentPage={product.title}
+                            crumbs={[
+                                { title: "Shop", href: "/shop" },
+                                { title: product.category?.[0], href: `/shop?category=${product.category?.[0]}` },
+                            ]}
                         />
                     </div>
-                    <ProductInfo
-                        product={product}
-                        timeLeft={timeLeft}
-                        selectedColorIndex={selectedColorIndex}
-                        setSelectedColorIndex={setSelectedColorIndex}
-                        quantity={quantity}
-                        updateQuantity={updateQuantity}
-                        liked={liked}
-                        toggleWishlist={toggleWishlist}
-                        addToCartHandler={addToCartHandler}
-                        isStockLimitReached={isStockLimitReached}
+                    <div className="flex flex-col md:flex-row gap-8 md:gap-10 lg:gap-15">
+                        <div className="flex flex-col gap-1 md:w-1/2">
+                            <ProductImageGallery
+                                images={productImages.length > 0 ? productImages : product.image ? [product.image] : []}
+                                price={product.price}
+                                originalPrice={effectiveOriginalPrice}
+                                valid_until={product.valid_until}
+                                isNew={product.is_new}
+                                colorHex={selectedColorHex}
+                            />
+                        </div>
+                        <ProductInfo
+                            product={product}
+                            timeLeft={timeLeft}
+                            selectedColorIndex={selectedColorIndex}
+                            setSelectedColorIndex={setSelectedColorIndex}
+                            quantity={quantity}
+                            updateQuantity={updateQuantity}
+                            liked={liked}
+                            toggleWishlist={toggleWishlist}
+                            addToCartHandler={addToCartHandler}
+                            isStockLimitReached={isStockLimitReached}
+                        />
+                    </div>
+                    <ProductReviews
+                        productId={product.id}
+                        productTitle={product.title}
+                        shortDescription={product.short_description}
+                        measurements={product.measurements}
+                        weight={product.weight}
                     />
                 </div>
-                <ProductReviews
-                    productId={product.id}
-                    productTitle={product.title}
-                    shortDescription={product.short_description}
-                    measurements={product.measurements}
-                    weight={product.weight}
-                />
+                <Newsletter />
             </div>
-            <Newsletter />
             <Footer />
         </div>
     );

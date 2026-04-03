@@ -75,7 +75,6 @@ const WishlistPage = () => {
   }
 
   useEffect(() => {
-    // Only show full loading skeleton if we have no items yet.
     if (items.length === 0) {
       setLoading(true)
     }
@@ -146,7 +145,7 @@ const WishlistPage = () => {
                 dispatch(setCart(items))
                 toast.success(`${product.title} added to cart`)
               }}
-              className="bg-black text-white px-4 py-2 rounded-md text-sm w-full md:w-fit"
+              className="cursor-pointer bg-black text-white px-4 py-2 rounded-md text-sm w-full md:w-fit"
             >
               Add to cart
             </button>
@@ -166,7 +165,7 @@ const WishlistPage = () => {
                   <RxCross1 />
                 </button>
 
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
+                <div className="relative w-16 h-16 flex-shrink-0">
                   <TintedProductImage
                     src={product.image}
                     alt={product.title}

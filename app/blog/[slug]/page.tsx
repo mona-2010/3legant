@@ -20,10 +20,12 @@ const page = async ({ params }: PageProps) => {
   return (
     <div>
       <Header />
-      <div className='my-10'>
-        <BlogDetail blog={currentBlog} />
+      <div className="page-content-container">
+        <div className='my-10'>
+          <BlogDetail blog={currentBlog} />
+        </div>
+        <Newsletter />
       </div>
-      <Newsletter />
       <Footer />
     </div>
   )

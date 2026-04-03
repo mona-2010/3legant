@@ -146,7 +146,7 @@ export default function ProductCard({ product }: Props) {
 
         <button
           onClick={toggleWishlist}
-          className="absolute top-4 right-4 z-20 bg-white p-2 rounded-full shadow opacity-0 group-hover:opacity-100"
+          className="absolute cursor-pointer top-4 right-4 z-20 bg-white p-2 rounded-full shadow opacity-0 group-hover:opacity-100"
         >
           {liked ? (
             <GoHeartFill className="text-2xl transition text-red-500" />
@@ -178,7 +178,7 @@ export default function ProductCard({ product }: Props) {
               e.stopPropagation()
               addProductToCart()
             }}
-            className="w-[85%] py-2 text-center rounded-xl absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white opacity-0 group-hover:opacity-100"
+            className="w-[85%] cursor-pointer py-2 text-center rounded-xl absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white opacity-0 group-hover:opacity-100"
           >
             Add to cart
           </button>
