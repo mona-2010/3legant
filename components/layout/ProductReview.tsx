@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { StarRating } from "./ProductSlider"
 import {
     getReviews,
@@ -31,8 +31,20 @@ interface ProductReviewsProps {
     weight?: string | null
 }
 
+const sortReviews = (reviews: Review[], sortBy: string) => {
+    return [...reviews].sort((a, b) => {
+        const createdAtDiff = new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        const ratingDiff = b.rating - a.rating
+
+        if (sortBy === "oldest") return -createdAtDiff
+        if (sortBy === "highest") return ratingDiff || createdAtDiff
+        if (sortBy === "lowest") return -ratingDiff || createdAtDiff
+        return createdAtDiff
+    })
+}
+
 const ProductReviews = ({ productId, productTitle, shortDescription, measurements, weight }: ProductReviewsProps) => {
-    const [activeTab, setActiveTab] = useState<TabKey>("reviews")
+    const [activeTab, setActiveTab] = useState<TabKey | null>("reviews")
     const [sortBy, setSortBy] = useState("newest")
     const [visibleCount, setVisibleCount] = useState(2)
     const [reviews, setReviews] = useState<Review[]>([])
@@ -46,16 +58,32 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
     const { user } = useAuth()
     const userId = user?.id ?? null
 
-    const loadReviews = useCallback(async () => {
-        setLoading(true)
-        const { data } = await getReviews(productId, sortBy)
-        if (data) setReviews(data)
-        setLoading(false)
-    }, [productId, sortBy])
+    const handleTabClick = (tab: TabKey) => {
+        setActiveTab((currentTab) => (currentTab === tab ? null : tab))
+    }
 
     useEffect(() => {
-        loadReviews()
-    }, [loadReviews])
+        let cancelled = false
+
+        const loadReviews = async () => {
+            try {
+                const { data } = await getReviews(productId)
+                if (cancelled) return
+
+                setReviews(sortReviews(data || [], sortBy))
+            } finally {
+                if (!cancelled) {
+                    setLoading(false)
+                }
+            }
+        }
+
+        void loadReviews()
+
+        return () => {
+            cancelled = true
+        }
+    }, [productId, sortBy])
 
     useEffect(() => {
         const checkEligibility = async () => {
@@ -74,6 +102,10 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
     const avgRating = reviews.length > 0
         ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
         : 0
+
+    const applyReviewUpdate = (updater: (currentReviews: Review[]) => Review[]) => {
+        setReviews((currentReviews) => sortReviews(updater(currentReviews), sortBy))
+    }
 
     const startEditingReview = (review: Review) => {
         setEditingReviewId(review.id)
@@ -100,7 +132,7 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
         }
 
         setSubmitting(true)
-        const { error } = editingReviewId
+        const { data, error } = editingReviewId
             ? await updateReview({
                 id: editingReviewId,
                 rating: reviewRating,
@@ -119,8 +151,31 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
         }
 
         toast.success(editingReviewId ? "Review updated!" : "Review submitted!")
+        if (data) {
+            if (editingReviewId) {
+                applyReviewUpdate((currentReviews) =>
+                    currentReviews.map((review) =>
+                        review.id === editingReviewId
+                            ? {
+                                ...review,
+                                ...(data as Review),
+                            }
+                            : review
+                    )
+                )
+            } else {
+                applyReviewUpdate((currentReviews) => [
+                    {
+                        ...(data as Review),
+                        likes_count: 0,
+                        liked_by_me: false,
+                        replies: [],
+                    },
+                    ...currentReviews,
+                ])
+            }
+        }
         resetReviewForm()
-        loadReviews()
     }
 
     const handleDeleteReview = async (reviewId: string) => {
@@ -130,7 +185,7 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
             return false
         }
         toast.success("Review deleted")
-        loadReviews()
+        setReviews((currentReviews) => currentReviews.filter((review) => review.id !== reviewId))
         return true
     }
 
@@ -146,7 +201,17 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
             return
         }
 
-        loadReviews()
+        applyReviewUpdate((currentReviews) =>
+            currentReviews.map((review) =>
+                review.id === reviewId
+                    ? {
+                        ...review,
+                        liked_by_me: !review.liked_by_me,
+                        likes_count: Math.max(0, review.likes_count + (review.liked_by_me ? -1 : 1)),
+                    }
+                    : review
+            )
+        )
     }
 
     const handleAddReply = async (reviewId: string, text: string) => {
@@ -155,18 +220,29 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
             return false
         }
 
-        const { error } = await createReviewReply({ review_id: reviewId, text })
+        const { data, error } = await createReviewReply({ review_id: reviewId, text })
         if (error) {
             toast.error(error)
             return false
         }
 
         toast.success("Reply added")
-        await loadReviews()
+        if (data) {
+            applyReviewUpdate((currentReviews) =>
+                currentReviews.map((review) =>
+                    review.id === reviewId
+                        ? {
+                            ...review,
+                            replies: [...review.replies, data],
+                        }
+                        : review
+                )
+            )
+        }
         return true
     }
 
-    const handleDeleteReply = async (replyId: string) => {
+    const handleDeleteReply = async (reviewId: string, replyId: string) => {
         const { error } = await deleteReviewReply(replyId)
         if (error) {
             toast.error(error)
@@ -174,7 +250,16 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
         }
 
         toast.success("Reply deleted")
-        await loadReviews()
+        setReviews((currentReviews) =>
+            currentReviews.map((review) =>
+                review.id === reviewId
+                    ? {
+                        ...review,
+                        replies: review.replies.filter((reply) => reply.id !== replyId),
+                    }
+                    : review
+            )
+        )
         return true
     }
 
@@ -217,6 +302,7 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
                 onSortByChange={(value) => {
                     setSortBy(value)
                     setVisibleCount(2)
+                    setReviews((currentReviews) => sortReviews(currentReviews, value))
                 }}
             />
 
@@ -259,7 +345,7 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
         <div className="mt-10 md:mt-20">
             <div className="md:hidden flex flex-col w-full">
                 <div>
-                    <TabButton tab="info" activeTab={activeTab} onClick={setActiveTab} label="Additional Info" />
+                    <TabButton tab="info" activeTab={activeTab} onClick={handleTabClick} label="Additional Info" />
                     {activeTab === "info" && (
                         <div className="pb-8">
                             <AdditionalInfoTab
@@ -271,7 +357,7 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
                     )}
                 </div>
                 <div className="border-t border-transparent">
-                    <TabButton tab="questions" activeTab={activeTab} onClick={setActiveTab} label="Questions" />
+                    <TabButton tab="questions" activeTab={activeTab} onClick={handleTabClick} label="Questions" />
                     {activeTab === "questions" && (
                         <div className="pb-8">
                             <QuestionsTab />
@@ -279,7 +365,7 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
                     )}
                 </div>
                 <div className="border-t border-transparent">
-                    <TabButton tab="reviews" activeTab={activeTab} onClick={setActiveTab} label="Reviews" count={reviews.length} />
+                    <TabButton tab="reviews" activeTab={activeTab} onClick={handleTabClick} label="Reviews" count={reviews.length} />
                     {activeTab === "reviews" && (
                         <div className="pb-8">
                             {renderReviewsContent()}
@@ -292,9 +378,9 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
             {/* Desktop Tabs */}
             <div className="hidden md:block">
                 <div className="flex flex-row items-start gap-8 border-b border-lightgray text-gray-500 text-sm font-medium">
-                    <TabButton tab="info" activeTab={activeTab} onClick={setActiveTab} label="Additional Info" />
-                    <TabButton tab="questions" activeTab={activeTab} onClick={setActiveTab} label="Questions" />
-                    <TabButton tab="reviews" activeTab={activeTab} onClick={setActiveTab} label="Reviews" count={reviews.length} />
+                    <TabButton tab="info" activeTab={activeTab} onClick={handleTabClick} label="Additional Info" />
+                    <TabButton tab="questions" activeTab={activeTab} onClick={handleTabClick} label="Questions" />
+                    <TabButton tab="reviews" activeTab={activeTab} onClick={handleTabClick} label="Reviews" count={reviews.length} />
                 </div>
 
                 <div className="mt-10">

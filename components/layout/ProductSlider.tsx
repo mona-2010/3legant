@@ -2,14 +2,15 @@
 
 import ProductCard from "./ProductCard"
 import { useEffect } from "react"
+import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { setCart } from "@/store/cartSlice"
+import { upsertCartItem } from "@/store/cartSlice"
 import { AppDispatch, RootState } from "@/store/store"
-import { fetchCart } from "@/lib/cart/fetchCart"
 import { addItemToCart } from "@/lib/cart/mutations"
 import { toast } from "react-toastify"
 import ProductListItem from "./ProductListItem"
 import { useAuth } from "@/components/providers/AuthProvider"
+import { useRouter } from "next/navigation"
 import { fetchWishlist, addToWishlist, removeFromWishlist, selectWishlistProductIds } from "@/store/wishlistSlice"
 export { StarRating } from "./StarRating"
 export { NewLabel } from "./NewLabel"
@@ -36,9 +37,11 @@ interface Props {
 
 const ProductSlider = ({ products, grid }: Props) => {
   const dispatch = useDispatch<AppDispatch>()
+  const router = useRouter()
   const { user } = useAuth()
   const cartItems = useSelector((state: RootState) => state.cart.items)
   const wishlistProductIds = useSelector(selectWishlistProductIds)
+  const [addingProductId, setAddingProductId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -48,7 +51,7 @@ const ProductSlider = ({ products, grid }: Props) => {
   const handleWishlist = async (e: React.MouseEvent, productId: string) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!user) { toast.error("Please login to add items to wishlist"); return }
+    if (!user) { router.push("/sign-in"); return }
 
     const isLiked = wishlistProductIds.includes(productId)
     if (isLiked) {
@@ -69,7 +72,8 @@ const ProductSlider = ({ products, grid }: Props) => {
   ) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!user) { toast.error("Please login to add items to cart"); return }
+    if (!user) { router.push("/sign-in"); return }
+    if (addingProductId) return
     const currentProductQty = cartItems
       .filter((item) => item.product_id === productId)
       .reduce((sum, item) => sum + item.quantity, 0)
@@ -78,11 +82,27 @@ const ProductSlider = ({ products, grid }: Props) => {
       return
     }
     const normalizedColors = Array.isArray(productColor) ? productColor : []
-    const added = await addItemToCart({ userId: user.id, productId, quantity: 1, color: normalizedColors[0] ?? null })
-    if (!added) { toast.error("Stock limit exceeded"); return }
-    const items = await fetchCart(user.id)
-    dispatch(setCart(items))
-    toast.success(`${productTitle} added to cart`)
+    setAddingProductId(productId)
+    try {
+      const result = await addItemToCart({ userId: user.id, productId, quantity: 1, color: normalizedColors[0] ?? null })
+      if (!result.success || !result.item) { toast.error("Stock limit exceeded"); return }
+      const product = products.find((item) => item.id === productId)
+      if (product) {
+        dispatch(upsertCartItem({
+          id: result.item.id,
+          product_id: result.item.product_id,
+          name: productTitle,
+          image: product.image,
+          price: product.price,
+          quantity: result.item.quantity,
+          color: result.item.color ?? undefined,
+          stock: product.stock,
+        }))
+      }
+      toast.success(`${productTitle} added to cart`)
+    } finally {
+      setAddingProductId(null)
+    }
   }
 
   return (
@@ -104,6 +124,7 @@ const ProductSlider = ({ products, grid }: Props) => {
                 liked={wishlistProductIds.includes(product.id)}
                 onWishlist={handleWishlist}
                 onAddToCart={addToCartHandler}
+                isAddingToCart={addingProductId === product.id}
                 currentProductQty={cartItems
                   .filter((item) => item.product_id === product.id)
                   .reduce((sum, item) => sum + item.quantity, 0)}

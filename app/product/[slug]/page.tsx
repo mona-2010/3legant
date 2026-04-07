@@ -3,7 +3,7 @@
 import { useProducts } from "@/lib/hooks/useProducts";
 
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Breadcrumb from "@/components/BreadCrumb";
 import { Header, NavigationHeader } from "@/components/dynamicComponents";
 import Footer from "@/components/layout/Footer";
@@ -12,7 +12,7 @@ import ProductReviews from "@/components/layout/ProductReview";
 import ProductImageGallery from "@/components/layout/ProductImagegallery";
 import { createClient } from "@/lib/supabase/client";
 import { useDispatch, useSelector } from "react-redux";
-import { setCart } from "@/store/cartSlice";
+import { setCart, upsertCartItem } from "@/store/cartSlice";
 import { AppDispatch, RootState } from "@/store/store";
 import { fetchCart } from "@/lib/cart/fetchCart";
 import { addItemToCart } from "@/lib/cart/mutations";
@@ -21,6 +21,7 @@ import ProductInfo from "./ProductInfo";
 import ProductDetailSkeleton from "@/components/common/ProductDetailSkeleton";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { isProductCategory, ProductCategory } from "@/types";
+import { getEffectiveProductPrice, hasActiveDiscount } from "@/lib/utils/product-pricing";
 import {
     addToWishlist,
     fetchWishlist,
@@ -53,6 +54,7 @@ type Product = {
 
 export default function ProductDetailPage() {
     const params = useParams();
+    const router = useRouter();
     const supabase = useMemo(() => createClient(), []);
     const dispatch = useDispatch<AppDispatch>();
     const cartItems = useSelector((state: RootState) => state.cart.items);
@@ -65,6 +67,7 @@ export default function ProductDetailPage() {
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
     const [quantity, setQuantity] = useState(1);
     const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(null);
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
     const userId = user?.id ?? null;
 
     const product = initialProduct;
@@ -127,7 +130,7 @@ export default function ProductDetailPage() {
 
     const toggleWishlist = async (selectedColor?: string | null) => {
         if (!userId) {
-            toast.error("Login to add items to wishlist");
+            router.push("/sign-in");
             return;
         }
         if (!product) return;
@@ -152,31 +155,48 @@ export default function ProductDetailPage() {
 
     const addToCartHandler = async () => {
         if (!product) return;
-        if (!user) { toast.error("Login to add items to cart"); return; }
+        if (!user) { router.push("/sign-in"); return; }
+        if (isAddingToCart) return;
+
+        setIsAddingToCart(true);
+
         const currentProductQty = cartItems
             .filter((item) => item.product_id === product.id)
             .reduce((sum, item) => sum + item.quantity, 0);
         const selectedQty = Math.max(1, quantity);
         if (typeof product.stock === "number" && currentProductQty + selectedQty > product.stock) {
             toast.error("Stock limit exceeded");
+            setIsAddingToCart(false);
             return;
         }
         const selectedColorName = selectedColorIndex !== null ? product.color?.[selectedColorIndex] ?? null : null;
-        const added = await addItemToCart({ userId: user.id, productId: product.id, quantity, color: selectedColorName });
-        if (!added) {
-            toast.error("Stock limit exceeded");
-            return;
+        try {
+            const result = await addItemToCart({ userId: user.id, productId: product.id, quantity, color: selectedColorName });
+            if (!result.success || !result.item) {
+                toast.error("Stock limit exceeded");
+                return;
+            }
+            dispatch(upsertCartItem({
+                id: result.item.id,
+                product_id: result.item.product_id,
+                name: product.title,
+                image: product.image,
+                price: getEffectiveProductPrice(product),
+                quantity: result.item.quantity,
+                color: result.item.color ?? undefined,
+                stock: product.stock,
+            }));
+            toast.success(`${product.title} added to cart`);
+        } finally {
+            setIsAddingToCart(false);
         }
-        const items = await fetchCart(user.id);
-        dispatch(setCart(items));
-        toast.success(`${product.title} added to cart`);
     };
 
     if (!product) return <ProductDetailSkeleton />;
 
-    const offerEnd = product.valid_until ? new Date(product.valid_until).getTime() : null;
-    const hasActiveDiscount = !!product.original_price && product.original_price > product.price && !!offerEnd && offerEnd > Date.now();
-    const effectiveOriginalPrice = hasActiveDiscount ? product.original_price : 0;
+    const isDiscountActive = hasActiveDiscount(product);
+    const effectivePrice = getEffectiveProductPrice(product);
+    const effectiveOriginalPrice = isDiscountActive ? product.original_price : 0;
     const currentProductQty = cartItems
         .filter((item) => item.product_id === product.id)
         .reduce((sum, item) => sum + item.quantity, 0);
@@ -202,7 +222,7 @@ export default function ProductDetailPage() {
                         <div className="flex flex-col gap-1 md:w-1/2">
                             <ProductImageGallery
                                 images={productImages.length > 0 ? productImages : product.image ? [product.image] : []}
-                                price={product.price}
+                                price={effectivePrice}
                                 originalPrice={effectiveOriginalPrice}
                                 valid_until={product.valid_until}
                                 isNew={product.is_new}
@@ -219,6 +239,7 @@ export default function ProductDetailPage() {
                             liked={liked}
                             toggleWishlist={toggleWishlist}
                             addToCartHandler={addToCartHandler}
+                            isAddingToCart={isAddingToCart}
                             isStockLimitReached={isStockLimitReached}
                         />
                     </div>

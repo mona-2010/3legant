@@ -5,6 +5,9 @@ import CheckoutForm, { FormData } from "../forms/CheckOutForm";
 import CouponInput from "./CouponInput";
 import TintedProductImage from "./TintedProductImage";
 import { HiMinus, HiPlus } from "react-icons/hi";
+import { useDispatch } from "react-redux";
+import { setShippingMethod } from "@/store/cartSlice";
+import { buildShippingOptions, getShippingOptionPriceLabel } from "@/lib/shipping";
 
 type Props = {
   cartItems: CartItem[];
@@ -31,6 +34,9 @@ const CheckoutDetail = ({
   removeItem,
   updateQuantity,
 }: Props) => {
+  const dispatch = useDispatch()
+  const shippingOptions = buildShippingOptions(["free", "express", "pickup"])
+
   return (
     <div className="font-inter flex flex-col lg:flex-row gap-8 lg:gap-10 px-[30px] md:px-[50px] lg:px-[80px] xl:px-[140px] my-8 sm:my-10 items-start">
       <CheckoutForm
@@ -71,8 +77,7 @@ const CheckoutDetail = ({
                   <div className="border border-gray-200 flex items-center w-fit my-2 px-3 py-1 rounded">
                     <button
                       onClick={() => updateQuantity(item.id, "dec")}
-                      disabled={item.quantity <= 1}
-                      className={item.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""}
+                      className="cursor-pointer"
                     >
                       <HiMinus size={12} />
                     </button>
@@ -80,7 +85,7 @@ const CheckoutDetail = ({
                     <button
                       onClick={() => updateQuantity(item.id, "inc")}
                       disabled={typeof item.stock === "number" && item.quantity >= item.stock}
-                      className={typeof item.stock === "number" && item.quantity >= item.stock ? "opacity-50 cursor-not-allowed" : ""}
+                      className={typeof item.stock === "number" && item.quantity >= item.stock ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                     >
                       <HiPlus size={12} />
                     </button>
@@ -99,6 +104,30 @@ const CheckoutDetail = ({
               </div>
             </div>
           ))}
+
+          <hr className="my-4" />
+          <div className="space-y-3">
+            {shippingOptions.map((option) => (
+              <label
+                key={option.id}
+                className="flex justify-between items-center border p-3 rounded cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="shipping"
+                    checked={shippingMethod === option.method}
+                    onChange={() => dispatch(setShippingMethod(option.method))}
+                  />
+                  <span>{option.name}</span>
+                </div>
+
+                <span className="font-medium">
+                  {getShippingOptionPriceLabel(option.method)}
+                </span>
+              </label>
+            ))}
+          </div>
 
           <hr className="my-4" />
           <CouponInput subtotal={subtotal} />

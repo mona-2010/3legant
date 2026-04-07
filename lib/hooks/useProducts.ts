@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ProductCategory, isProductCategory } from "@/types";
 import { isProductNew } from "@/lib/utils/product-utils";
+import { getEffectiveProductPrice } from "@/lib/utils/product-pricing";
 
 export interface ProductType {
   id: string;
@@ -40,6 +41,15 @@ interface UsePaginatedProductsOptions {
 
 const VALID_PRICE_RANGES = new Set(["0-99", "100-199", "200-299", "300-399", "400+"]);
 
+const isPriceInRange = (price: number, range: string) => {
+  if (range === "0-99") return price <= 99;
+  if (range === "100-199") return price >= 100 && price <= 199;
+  if (range === "200-299") return price >= 200 && price <= 299;
+  if (range === "300-399") return price >= 300 && price <= 399;
+  if (range === "400+") return price >= 400;
+  return false;
+};
+
 let store: ProductsStore = {
   products: [],
   loading: true,
@@ -55,6 +65,7 @@ const notify = () => {
 
 const normalizeProduct = (p: any): ProductType => ({
   ...p,
+  price: getEffectiveProductPrice(p),
   is_new: isProductNew(p.created_at),
   color: Array.isArray(p.color) ? p.color : p.color ? [p.color] : [],
   category: Array.isArray(p.category)
@@ -85,29 +96,6 @@ const fetchProducts = async () => {
     store.loading = false;
     notify();
   }
-};
-
-const applyPriceFilters = (query: any, selectedPrices: string[]) => {
-  const validRanges = selectedPrices.filter((range) => VALID_PRICE_RANGES.has(range));
-
-  if (validRanges.length === 0) {
-    return query;
-  }
-
-  const conditions = validRanges.map((range) => {
-    if (range === "0-99") return "price.lte.99";
-    if (range === "100-199") return "and(price.gte.100,price.lte.199)";
-    if (range === "200-299") return "and(price.gte.200,price.lte.299)";
-    if (range === "300-399") return "and(price.gte.300,price.lte.399)";
-    if (range === "400+") return "price.gte.400";
-    return "";
-  }).filter(Boolean);
-
-  if (conditions.length === 0) {
-    return query;
-  }
-
-  return query.or(conditions.join(","));
 };
 
 export function useProducts() {
@@ -212,24 +200,7 @@ export function usePaginatedProducts({
       if (category !== "all") {
         query = query.contains("category", [category]);
       }
-
-      const shouldApplyPriceFilters =
-        selectedPrices.length > 0 && !selectedPrices.includes("all");
-
-      if (shouldApplyPriceFilters) {
-        query = applyPriceFilters(query, selectedPrices);
-      }
-
-      if (sort === "low") {
-        query = query.order("price", { ascending: true });
-      } else if (sort === "high") {
-        query = query.order("price", { ascending: false });
-      } else {
-        query = query.order("created_at", { ascending: false });
-      }
-
-      // Fetch one extra row to infer whether more pages exist without exact counts.
-      query = query.range(offset, offset + pageSize);
+      query = query.order("created_at", { ascending: false });
 
       const { data, error } = await query;
 
@@ -238,11 +209,32 @@ export function usePaginatedProducts({
       }
 
       const normalized = (data || []).map(normalizeProduct);
-      const hasExtraRow = normalized.length > pageSize;
-      const pageItems = hasExtraRow ? normalized.slice(0, pageSize) : normalized;
+      const validRanges = selectedPrices.filter((range) => VALID_PRICE_RANGES.has(range));
+      const shouldApplyPriceFilters = validRanges.length > 0 && !selectedPrices.includes("all");
+
+      const filteredProducts = shouldApplyPriceFilters
+        ? normalized.filter((product: ProductType) => validRanges.some((range) => isPriceInRange(product.price, range)))
+        : normalized;
+
+      const sortedProducts = [...filteredProducts].sort((a, b) => {
+        if (sort === "low") {
+          return a.price - b.price;
+        }
+
+        if (sort === "high") {
+          return b.price - a.price;
+        }
+
+        const aTime = new Date(a.created_at).getTime();
+        const bTime = new Date(b.created_at).getTime();
+        return bTime - aTime;
+      });
+
+      const pageItems = sortedProducts.slice(offset, offset + pageSize);
+      const hasMoreProducts = offset + pageSize < sortedProducts.length;
 
       setProducts((prev) => (append ? [...prev, ...pageItems] : pageItems));
-      setHasMore(hasExtraRow);
+      setHasMore(hasMoreProducts);
     } catch (_error) {
       if (!append) {
         setProducts([]);

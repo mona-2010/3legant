@@ -165,13 +165,17 @@ export default function CheckoutPage() {
     const item = cartItems.find(i => i.id === id)
     if (!item) return
 
-    if (type === "dec" && item.quantity <= 1) return
+    if (type === "dec" && item.quantity <= 1) {
+      dispatch(removeFromCart(id))
+      await removeCartItem(id)
+      return
+    }
 
     const newQty = type === "inc" ? item.quantity + 1 : item.quantity - 1
     if (type === "inc" && typeof item.stock === "number" && newQty > item.stock) return
 
-    await updateCartItemQuantity(id, newQty)
     type === "inc" ? dispatch(increaseQty(id)) : dispatch(decreaseQty(id))
+    void updateCartItemQuantity(id, newQty)
   }
 
   const removeItem = async (id: string) => {

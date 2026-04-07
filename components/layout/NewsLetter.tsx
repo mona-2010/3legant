@@ -21,7 +21,7 @@ const Newsletter = () => {
         className="pointer-events-none absolute bottom-[-200px] right-[-320px] h-[700px] w-[690px] mix-blend-darken max-lg:w-[460px] max-md:hidden"
       />
 
-      <div className="relative flex flex-col justify-center items-center py-24 px-8">
+      <div className="relative flex flex-col justify-center items-center py-10 md:py-15 lg:py-24 px-8">
 
         <div>
           <p className="text-center mb-2 text-[40px] font-poppins">
@@ -33,7 +33,7 @@ const Newsletter = () => {
         </div>
 
         <div
-          className="mt-8 flex w-[488px] items-center border-b border-gray-200 font-inter font-medium text-black max-lg:w-[400px] max-sm:mx-auto max-sm:w-[240px]"
+          className="mt-8 flex w-[488px] items-center border-b border-gray-200 font-inter font-medium text-black max-lg:w-[400px] max-sm:mx-auto max-sm:w-auto"
           style={{ height: 48 }}
         >
           <div className="flex items-center w-full">

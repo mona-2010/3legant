@@ -154,7 +154,7 @@ const AddressPage = () => {
 
             {isModalOpen && editingAddress && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl">
+                    <div className="bg-white p-6 rounded-xl w-full h-full overflow-y-auto max-w-md shadow-xl">
                         <h2 className="text-lg font-bold mb-4">
                             {editingAddress.id ? "Update" : "Add"} Address
                         </h2>

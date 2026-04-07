@@ -5,11 +5,11 @@ import { useForm } from "react-hook-form"
 import { BiLocationPlus } from 'react-icons/bi';
 import { FiPhone } from 'react-icons/fi';
 import { HiOutlineMail } from 'react-icons/hi';
-import { IoHomeOutline } from 'react-icons/io5';
 import { submitContactMessage } from "@/lib/actions/contact";
+import { AiTwotoneShop } from "react-icons/ai";
 
 const values = [
-    { icon: <IoHomeOutline />, title: "Address", desc: "234 Hai Trieu, Ho Chi Minh City, Viet Nam" },
+    { icon: <AiTwotoneShop />, title: "Address", desc: "234 Hai Trieu, Viet Nam" },
     { icon: <FiPhone />, title: "Contact us", desc: "+84 234 567 890" },
     { icon: <HiOutlineMail />, title: "Email", desc: "hello@3legant.com" },
 ];
@@ -53,10 +53,10 @@ const ContactForm = () => {
     return (
         <>
             <h1 className='font-poppins font-medium text-[24px] md:text-[40px] text-center leading-[44px] my-10'>Contact Us</h1>
-            <div className="text-center flex flex-col md:flex-row md:justify-between lg:flex-row lg:justify-between my-4 gap-6">
+            <div className="text-center grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 my-4 gap-6">
                 {values.map((value, index) => (
-                    <div key={index} className="flex flex-col items-center w-full overflow-hidden">
-                        <div className="text-lg flex flex-col items-center justify-center md:text-4xl bg-gray-100 w-[250px] md:w-[390px] h-[100px] md:h-[200px] px-2 md:px-8 max-sm:px-4 py-12">
+                    <div key={index} className="bg-gray-100 flex flex-col items-center w-full h-full">
+                        <div className="text-lg flex flex-col items-center justify-center md:text-4xl w-[250px] md:w-[390px] px-2 md:px-8 max-sm:px-4 py-12">
                             {value.icon}
                             <p className="uppercase max-lg:text-md font-inter text-[20px] py-2 md:py-4 font-[700] text-gray-200 max-md:text-sm max-sm:font-semibold">
                                 {value.title}

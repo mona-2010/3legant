@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useForm, SubmitHandler } from "react-hook-form"
-import { IoEyeOutline } from "react-icons/io5"
+import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 type FormValues = {
@@ -37,32 +37,37 @@ const ResetForm = () => {
 
   return (
     <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-5 md:ml-10 lg:ml-25 text-gray-200">
-      <h1 className="mb-20 font-poppins text-[40px] font-[500] text-[#141718] leading-10">
+      <h1 className="mb-10 font-poppins text-[40px] font-[500] text-[#141718] leading-10">
         Reset Password
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="w-full mr-auto">
-        <div className="flex justify-between items-center mt-4">
-          <label>New Password</label>
+        <div className="flex justify-between items-center mt-4 border-b border-lightgray">
+          <input
+            type={showPassword ? "text" : "password"}
+            className="custom-input w-full mb-1 focus:outline-none"
+            {...register("password", {
+              required: "Password is required",
+              minLength: {
+                value: 6,
+                message: "Password must be at least 6 characters",
+              },
+            })}
+            placeholder="New Password"
+          />
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)}
+            className="cursor-pointer"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
           >
-            <IoEyeOutline className="text-2xl" />
+            {showPassword ? (
+              <IoEyeOffOutline className="text-2xl" />
+            ) : (
+              <IoEyeOutline className="text-2xl" />
+            )}
           </button>
         </div>
-
-        <input
-          type={showPassword ? "text" : "password"}
-          className="custom-input w-full border-b border-lightgray mb-1 focus:outline-none"
-          {...register("password", {
-            required: "Password is required",
-            minLength: {
-              value: 6,
-              message: "Password must be at least 6 characters",
-            },
-          })}
-        />
         {errors.password && (
           <p className="text-red-500 text-sm mb-4">
             {errors.password.message}
@@ -78,7 +83,7 @@ const ResetForm = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-50 text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
+          className="cursor-pointer w-50 text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
         >
           {isSubmitting ? "Changing Password...." : "Set"}
         </button>

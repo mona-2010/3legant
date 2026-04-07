@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { useState } from "react"
-import { GoHeart } from "react-icons/go"
+import { GoHeart, GoHeartFill } from "react-icons/go"
 import { RxCross1 } from "react-icons/rx"
 import { StarRating } from "@/components/layout/ProductSlider"
 import { Review } from "@/types"
@@ -18,7 +18,7 @@ interface ReviewItemProps {
     onDelete: (reviewId: string) => Promise<boolean>
     onToggleLike: (reviewId: string) => Promise<void>
     onAddReply: (reviewId: string, text: string) => Promise<boolean>
-    onDeleteReply: (replyId: string) => Promise<boolean>
+    onDeleteReply: (reviewId: string, replyId: string) => Promise<boolean>
 }
 
 export default function ReviewItem({
@@ -52,7 +52,7 @@ export default function ReviewItem({
 
     const handleDeleteReply = async (replyId: string) => {
         setDeletingReplyId(replyId)
-        const result = await onDeleteReply(replyId)
+        const result = await onDeleteReply(review.id, replyId)
         setDeletingReplyId(null)
 
         if (result) {
@@ -124,10 +124,7 @@ export default function ReviewItem({
                         className={`cursor-pointer inline-flex items-center gap-1 transition ${review.liked_by_me ? "text-red-600" : "text-gray-600 hover:text-black"}`}
                         aria-label={review.liked_by_me ? "Unlike review" : "Like review"}
                     >
-                        <GoHeart
-                            size={16}
-                            className={review.liked_by_me ? "fill-current" : ""}
-                        />
+                        {review.liked_by_me ? <GoHeartFill size={16} /> : <GoHeart size={16} />}
                         <span>{review.likes_count}</span>
                     </button>
 

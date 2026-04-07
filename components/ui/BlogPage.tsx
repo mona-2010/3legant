@@ -105,7 +105,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                             setActiveTab("all")
                             setVisibleCount(PAGE_SIZE)
                         }}
-                        className={`${activeTab === "all"
+                        className={`cursor-pointer ${activeTab === "all"
                             ? "text-black border-b-2 border-black"
                             : "text-gray-400"
                             } pb-1`}
@@ -118,7 +118,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                             setActiveTab("featured")
                             setVisibleCount(PAGE_SIZE)
                         }}
-                        className={`${activeTab === "featured"
+                        className={`cursor-pointer ${activeTab === "featured"
                             ? "text-black border-b-2 border-black"
                             : "text-gray-400"
                             } pb-1`}
@@ -135,7 +135,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                             setSortOrder(value)
                             setVisibleCount(PAGE_SIZE)
                         }}
-                        className="w-full md:w-auto px-4 py-2 text-[16px] focus:outline-none border md:border-0 rounded-md"
+                        className="cursor-pointer w-full md:w-auto px-4 py-2 text-[16px] focus:outline-none border md:border-0 rounded-md"
                     >
                         <option value="newest">Newest</option>
                         <option value="oldest">Oldest</option>
@@ -201,7 +201,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                                 alt={blog.title}
                                 width={800}
                                 height={500}
-                                className={`object-cover ${(view === "list" || view === "grid1") ? "max-w-auto md:max-w-[200px] h-50" : "w-full h-60 md:h-90"}`}
+                                className={`object-cover ${(view === "list" || view === "grid1" || view === "grid2") ? "max-w-auto lg:max-w-70 h-60" : "w-full h-60 md:h-90"}`}
                             />
                         </Link>
 

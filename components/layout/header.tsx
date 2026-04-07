@@ -24,11 +24,14 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import TintedProductImage from "./TintedProductImage";
 import { clearWishlistState, fetchWishlist } from "@/store/wishlistSlice";
 import { categoryFilters, getCategoryLabel } from "./FilterBar";
+import { getEffectiveProductPrice } from "@/lib/utils/product-pricing";
 
 interface SearchProduct {
   id: string;
   title: string;
   price: number;
+  original_price?: number;
+  valid_until?: string | null;
   image: string;
   color?: string[];
 }
@@ -49,6 +52,7 @@ const Header = () => {
   const lastMobileSearchQueryRef = useRef("");
 
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const cartQuantityCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const wishlistCount = useSelector((state: RootState) => state.wishlist.productIds.length);
 
   useEffect(() => {
@@ -77,13 +81,17 @@ const Header = () => {
       const requestId = ++mobileSearchRequestSeqRef.current;
       const { data } = await supabase
         .from("products")
-        .select("id,title,price,image,color")
+        .select("id,title,price,original_price,valid_until,image,color")
         .ilike("title", `%${trimmed}%`)
         .limit(4);
 
       if (requestId !== mobileSearchRequestSeqRef.current) return;
       lastMobileSearchQueryRef.current = trimmed;
-      setMobileSearchResults((data as SearchProduct[]) || []);
+      const normalized = ((data as SearchProduct[]) || []).map((product) => ({
+        ...product,
+        price: getEffectiveProductPrice(product),
+      }));
+      setMobileSearchResults(normalized);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -166,7 +174,7 @@ const Header = () => {
           >
             <TbShoppingBag size={22} />
             <span className="bg-black text-white text-[12px] w-7 h-7 rounded-full flex items-center justify-center">
-              {cartItems.length}
+              {cartQuantityCount}
             </span>
           </div>
 
@@ -289,7 +297,7 @@ const Header = () => {
                 <div className="flex items-center">
                   <TbShoppingBag size={25} />
                   <span className="bg-black text-white text-[12px] w-7 h-7 rounded-full flex items-center justify-center">
-                    {cartItems.length}
+                    {cartQuantityCount}
                   </span>
                 </div>
               </div>

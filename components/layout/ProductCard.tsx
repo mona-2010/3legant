@@ -3,14 +3,15 @@ import Link from "next/link"
 import { GoHeart } from "react-icons/go"
 import { GoHeartFill } from "react-icons/go"
 import { useEffect } from "react"
+import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { setCart } from "@/store/cartSlice"
+import { upsertCartItem } from "@/store/cartSlice"
 import { NewLabel, StarRating } from "../layout/ProductSlider"
 import { AppDispatch, RootState } from "@/store/store"
-import { fetchCart } from "@/lib/cart/fetchCart"
 import { addItemToCart } from "@/lib/cart/mutations"
 import { toast } from "react-toastify"
 import { useAuth } from "@/components/providers/AuthProvider"
+import { useRouter } from "next/navigation"
 import TintedProductImage from "./TintedProductImage"
 import { ProductCategory } from "@/types"
 import {
@@ -41,8 +42,10 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const dispatch = useDispatch<AppDispatch>()
+  const router = useRouter()
   const { user } = useAuth()
   const cartItems = useSelector((state: RootState) => state.cart.items)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   const {
     id,
@@ -77,7 +80,7 @@ export default function ProductCard({ product }: Props) {
     e.stopPropagation()
 
     if (!userId) {
-      toast.error("Login to add items to wishlist")
+      router.push("/sign-in")
       return
     }
 
@@ -101,9 +104,10 @@ export default function ProductCard({ product }: Props) {
 
   const addProductToCart = async () => {
     if (!user) {
-      toast.error("Login to add items to cart")
+      router.push("/sign-in")
       return
     }
+    if (isAddingToCart) return
 
     const normalizedColors = Array.isArray(color) ? color : []
     const selectedColorName = normalizedColors[0] ?? null
@@ -113,21 +117,34 @@ export default function ProductCard({ product }: Props) {
       return
     }
 
-    const added = await addItemToCart({
-      userId: user.id,
-      productId: product.id,
-      quantity: 1,
-      color: selectedColorName,
-    })
+    setIsAddingToCart(true)
+    try {
+      const result = await addItemToCart({
+        userId: user.id,
+        productId: product.id,
+        quantity: 1,
+        color: selectedColorName,
+      })
 
-    if (!added) {
-      toast.error("Stock limit exceeded")
-      return
+      if (!result.success || !result.item) {
+        toast.error("Stock limit exceeded")
+        return
+      }
+
+      dispatch(upsertCartItem({
+        id: result.item.id,
+        product_id: result.item.product_id,
+        name: title,
+        image,
+        price,
+        quantity: result.item.quantity,
+        color: result.item.color ?? undefined,
+        stock: product.stock,
+      }))
+      toast.success(`${title} added to cart`)
+    } finally {
+      setIsAddingToCart(false)
     }
-
-    const items = await fetchCart(user.id)
-    dispatch(setCart(items))
-    toast.success(`${title} added to cart`)
   }
 
   return (
@@ -179,9 +196,10 @@ export default function ProductCard({ product }: Props) {
               e.stopPropagation()
               addProductToCart()
             }}
-            className="w-[85%] cursor-pointer py-2 text-center rounded-xl absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white opacity-0 group-hover:opacity-100"
+            disabled={isAddingToCart}
+            className="w-[85%] cursor-pointer py-2 text-center rounded-xl absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white opacity-0 group-hover:opacity-100 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Add to cart
+            {isAddingToCart ? "Adding..." : "Add to cart"}
           </button>
         )}
       </div>

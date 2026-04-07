@@ -4,15 +4,16 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { RxCross1 } from "react-icons/rx"
 import { useDispatch, useSelector } from "react-redux"
-import { setCart } from "@/store/cartSlice"
+import { upsertCartItem } from "@/store/cartSlice"
 import { AppDispatch, RootState } from "@/store/store"
-import { fetchCart } from "@/lib/cart/fetchCart"
 import { addItemToCart } from "@/lib/cart/mutations"
 import { toast } from "react-toastify"
 import { useAuth } from "@/components/providers/AuthProvider"
+import { useRouter } from "next/navigation"
 import TintedProductImage from "../layout/TintedProductImage"
 import WishlistSkeleton from "../common/WishlistSkeleton"
 import { removeFromWishlist, setWishlistProductIds } from "@/store/wishlistSlice"
+import { getEffectiveProductPrice } from "@/lib/utils/product-pricing"
 
 interface WishlistItem {
   id: string
@@ -22,6 +23,7 @@ interface WishlistItem {
     title: string
     price: number
     original_price?: number
+    valid_until?: string | null
     image: string
     color?: string[]
     is_active?: boolean
@@ -30,6 +32,7 @@ interface WishlistItem {
 }
 
 const WishlistPage = () => {
+  const router = useRouter()
   const supabase = createClient()
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useAuth()
@@ -38,6 +41,7 @@ const WishlistPage = () => {
 
   const [items, setItems] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [addingProductId, setAddingProductId] = useState<string | null>(null)
 
   const fetchWishlist = async () => {
     if (!user) {
@@ -56,6 +60,7 @@ const WishlistPage = () => {
           title,
           price,
           original_price,
+          valid_until,
           image,
           color,
           is_active,
@@ -67,7 +72,21 @@ const WishlistPage = () => {
     if (error) {
       console.error(error)
     } else {
-      const nextItems = data as unknown as WishlistItem[]
+      const nextItems = ((data as unknown as WishlistItem[]) || []).map((item) => {
+        if (!item.products) return item
+
+        return {
+          ...item,
+          products: {
+            ...item.products,
+            price: getEffectiveProductPrice({
+              price: item.products.price,
+              original_price: item.products.original_price,
+              valid_until: item.products.valid_until,
+            }),
+          },
+        }
+      })
       setItems(nextItems)
       dispatch(setWishlistProductIds(nextItems.map((item) => item.product_id)))
     }
@@ -130,26 +149,41 @@ const WishlistPage = () => {
           return (
             <button
               onClick={async () => {
-                if (!user) { toast.error("Login to add items to cart"); return }
+                if (!user) { router.push("/sign-in"); return }
+                if (addingProductId === product.id) return
                 if (isStockLimitReached) { toast.error("Stock limit exceeded"); return }
 
                 const selectedColor = colorPreferences[product.id] ?? product.color?.[0] ?? null
-                const added = await addItemToCart({
-                  userId: user.id,
-                  productId: product.id,
-                  quantity: 1,
-                  color: selectedColor,
-                })
+                setAddingProductId(product.id)
+                try {
+                  const result = await addItemToCart({
+                    userId: user.id,
+                    productId: product.id,
+                    quantity: 1,
+                    color: selectedColor,
+                  })
 
-                if (!added) { toast.error("Stock limit exceeded"); return }
+                  if (!result.success || !result.item) { toast.error("Stock limit exceeded"); return }
 
-                const items = await fetchCart(user.id)
-                dispatch(setCart(items))
-                toast.success(`${product.title} added to cart`)
+                  dispatch(upsertCartItem({
+                    id: result.item.id,
+                    product_id: result.item.product_id,
+                    name: product.title,
+                    image: product.image,
+                    price: product.price,
+                    quantity: result.item.quantity,
+                    color: result.item.color ?? undefined,
+                    stock: product.stock,
+                  }))
+                  toast.success(`${product.title} added to cart`)
+                } finally {
+                  setAddingProductId(null)
+                }
               }}
-              className="cursor-pointer bg-black text-white px-4 py-2 rounded-md text-sm w-full md:w-fit"
+              disabled={addingProductId === product.id}
+              className="cursor-pointer bg-black text-white px-4 py-2 rounded-md text-sm w-full md:w-fit disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Add to cart
+              {addingProductId === product.id ? "Adding..." : "Add to cart"}
             </button>
           )
         }
@@ -162,7 +196,7 @@ const WishlistPage = () => {
               <div className="flex items-center gap-3 w-full">
                 <button
                   onClick={() => removeItem(item.id, item.product_id)}
-                  className="text-gray-400 hover:text-red-500 flex-shrink-0"
+                  className="cursor-pointer text-gray-400 hover:text-red-500 flex-shrink-0"
                 >
                   <RxCross1 />
                 </button>

@@ -84,8 +84,8 @@ export default function ShoppingCart({
                     alt={item.name}
                     fill
                     colorHex={item.color}
-                    className="object-contain mix-blend-multiply"
-                    sizes="(min-width: 640px) 80px, 80px"
+                    className="object-fit mix-blend-multiply"
+                    sizes="80px"
                   />
                 </div>
 
@@ -110,8 +110,7 @@ export default function ShoppingCart({
                 <div className="border flex w-fit px-3 py-1 rounded">
                   <button
                     onClick={() => updateQuantity(item.id, "dec")}
-                    disabled={item.quantity <= 1}
-                    className={item.quantity <= 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer" }
+                    className="cursor-pointer"
                   >
                     <HiMinus size={12} />
                   </button>

@@ -31,11 +31,17 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <div className="md:border-none border-t-2 md:border-gray-200 flex flex-col md:flex-row-reverse md:justify-between md:mt-4">
-                    <div className="mt-5 md:mt-0 flex items-center justify-center gap-[17px] text-[30px]">
-                        <PiInstagramLogo />
-                        <FiFacebook />
-                        <AiOutlineYoutube />
+                <div className="z-100 md:border-none border-t-2 md:border-gray-200 flex flex-col md:flex-row-reverse md:justify-between md:mt-4">
+                    <div className="cursor-pointer mt-5 md:mt-0 flex items-center justify-center gap-[17px] text-[30px]">
+                        <Link href="https://www.instagram.com" target="_blank" rel="noopener noreferrer">
+                            <PiInstagramLogo />
+                        </Link>
+                        <Link href="https://www.facebook.com" target="_blank" rel="noopener noreferrer">
+                            <FiFacebook />
+                        </Link>
+                        <Link href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
+                            <AiOutlineYoutube />
+                        </Link>
                     </div>
 
                     <div className="flex flex-col md:flex-row-reverse">

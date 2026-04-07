@@ -27,7 +27,16 @@ export default function CartPage() {
     const item = cartItems.find(i => i.id === id)
     if (!item) return
 
-    if (type === "dec" && item.quantity <= 1) return
+    if (type === "dec" && item.quantity <= 1) {
+      if (quantityFlushTimersRef.current[id]) {
+        clearTimeout(quantityFlushTimersRef.current[id])
+        delete quantityFlushTimersRef.current[id]
+      }
+      delete pendingQtyByItemRef.current[id]
+      await removeCartItem(id)
+      dispatch(removeFromCart(id))
+      return
+    }
 
     const newQty = type === "inc" ? item.quantity + 1 : item.quantity - 1
 

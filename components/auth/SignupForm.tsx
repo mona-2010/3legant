@@ -3,9 +3,10 @@
 import { useState } from "react"
 import { useForm, SubmitHandler } from "react-hook-form"
 import Link from "next/link"
-import { IoEyeOutline } from "react-icons/io5"
+import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { toast } from "react-toastify"
 
 type SignUpFormValues = {
   name: string
@@ -41,10 +42,13 @@ const SignupForm = () => {
   const onSubmit: SubmitHandler<SignUpFormValues> = async (data) => {
     setServerError(null)
 
+    const emailRedirectTo = `${window.location.origin}/sign-in`
+
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
+        emailRedirectTo,
         data: {
           name: data.name,
           full_name: data.name,
@@ -60,6 +64,7 @@ const SignupForm = () => {
       return
     }
 
+    toast.success("Account created. Please check your email to confirm your account.")
     router.push("/sign-in")
     router.refresh()
   }
@@ -78,7 +83,7 @@ const SignupForm = () => {
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="w-full mr-auto">
-        <div className="border-b border-lightgray py-2">
+        <div className="border-b border-lightgray py-4">
           <input
             className="custom-input w-full mb-2 focus:outline-none"
             {...register("name", { required: "Name is required" })}
@@ -91,7 +96,7 @@ const SignupForm = () => {
           </p>
         )}
 
-        <div className="border-b border-lightgray py-2">
+        <div className="border-b border-lightgray py-4">
           <input
             className="custom-input w-full mb-2 focus:outline-none"
             {...register("username", {
@@ -110,7 +115,7 @@ const SignupForm = () => {
           </p>
         )}
 
-        <div className="border-b border-lightgray py-2">
+        <div className="border-b border-lightgray py-4">
           <input
             type="email"
             className="custom-input w-full mb-2 focus:outline-none"
@@ -130,7 +135,7 @@ const SignupForm = () => {
           </p>
         )}
 
-        <div className="flex border-b border-lightgray items-center py-2 focus:outline-none">
+        <div className="flex border-b border-lightgray items-center py-4 focus:outline-none">
           <input
             type={showPassword ? "text" : "password"}
             className="flex custom-input w-full mb-2 focus:outline-none"
@@ -145,9 +150,15 @@ const SignupForm = () => {
           />
           <button
             type="button"
+            className="cursor-pointer"
             onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
           >
-            <IoEyeOutline className="text-2xl" />
+            {showPassword ? (
+              <IoEyeOffOutline className="text-2xl" />
+            ) : (
+              <IoEyeOutline className="text-2xl" />
+            )}
           </button>
         </div>
         {errors.password && (
@@ -160,7 +171,7 @@ const SignupForm = () => {
           <input
             type="checkbox"
             required
-            className="w-6 h-6 mt-1 "
+            className="cursor-pointer w-6 h-6 mt-1 "
             {...register("agree", {
               required: "You must accept the terms and conditions",
             })}
@@ -191,7 +202,7 @@ const SignupForm = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
+          className="cursor-pointer w-full text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
         >
           {isSubmitting ? "Creating account..." : "Sign Up"}
         </button>

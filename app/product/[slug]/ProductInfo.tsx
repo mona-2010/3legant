@@ -5,6 +5,7 @@ import { GoHeart, GoHeartFill } from "react-icons/go"
 import { StarRating } from "@/components/layout/StarRating"
 import { ProductCategory } from "@/types"
 import { HiMinus, HiPlus } from "react-icons/hi"
+import { getEffectiveProductPrice, hasActiveDiscount } from "@/lib/utils/product-pricing"
 
 type ProductInfoProps = {
   product: {
@@ -32,20 +33,17 @@ type ProductInfoProps = {
   liked: boolean
   toggleWishlist: (color?: string | null) => void
   addToCartHandler: () => void
+  isAddingToCart: boolean
   isStockLimitReached: boolean
 }
 
 export default function ProductInfo({
   product, timeLeft, selectedColorIndex, setSelectedColorIndex,
-  quantity, updateQuantity, liked, toggleWishlist, addToCartHandler, isStockLimitReached,
+  quantity, updateQuantity, liked, toggleWishlist, addToCartHandler, isAddingToCart, isStockLimitReached,
 }: ProductInfoProps) {
-  const offerEnd = product.valid_until ? new Date(product.valid_until).getTime() : null
-  const hasActiveDiscount =
-    !!product.original_price &&
-    product.original_price > product.price &&
-    !!offerEnd &&
-    offerEnd > Date.now()
-  const effectiveOriginalPrice = hasActiveDiscount ? product.original_price : 0
+  const isDiscountActive = hasActiveDiscount(product)
+  const effectivePrice = getEffectiveProductPrice(product)
+  const effectiveOriginalPrice = isDiscountActive ? product.original_price : 0
 
   return (
     <div className="md:w-1/2 flex flex-col gap-4">
@@ -57,13 +55,13 @@ export default function ProductInfo({
       <h1 className="font-poppins text-[32px] lg:text-[40px]">{product.title}</h1>
       <p className="text-gray-200 w-[90%] leading-[26px]">{product.description}</p>
       <div className="flex items-center gap-3 font-poppins font-[500]">
-        <p className="text-[28px]">${product.price}</p>
-        {hasActiveDiscount ? (
+        <p className="text-[28px]">${effectivePrice}</p>
+        {isDiscountActive ? (
           <p className="text-[20px] text-gray-200 line-through">${effectiveOriginalPrice}</p>
         ) : null}
       </div>
 
-        {hasActiveDiscount ? (
+        {isDiscountActive ? (
           <>
             <p>Offer expires in:</p>
             <div className="flex gap-3 py-6 flex-wrap">
@@ -103,7 +101,7 @@ export default function ProductInfo({
                   title={hex}
                   aria-label={`Select color ${hex}`}
                   aria-pressed={isActive}
-                  onClick={() => setSelectedColorIndex(isActive ? null : index)}
+                  onClick={() => setSelectedColorIndex(index)}
                   className="cursor-pointer relative w-8 h-8 rounded-full border-2 transition-all duration-150 focus:outline-none"
                   style={{
                     backgroundColor: hex,
@@ -163,9 +161,10 @@ export default function ProductInfo({
       ) : (
         <button
           onClick={addToCartHandler}
-          className="w-full rounded-lg bg-black text-white text-center py-3 cursor-pointer"
+          disabled={isAddingToCart}
+          className="w-full rounded-lg bg-black text-white text-center py-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Add to cart
+          {isAddingToCart ? "Adding..." : "Add to cart"}
         </button>
       )}
 

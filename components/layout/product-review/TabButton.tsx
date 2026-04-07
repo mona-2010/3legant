@@ -5,7 +5,7 @@ import { TabKey } from "./helpers"
 
 interface TabButtonProps {
     tab: TabKey
-    activeTab: TabKey
+    activeTab: TabKey | null
     onClick: (tab: TabKey) => void
     label: string
     count?: number

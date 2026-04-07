@@ -38,13 +38,15 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
     }
 
     if (type === "dec" && item.quantity <= 1) {
+      await removeCartItem(id)
+      dispatch(removeFromCart(id))
       return
     }
 
-    await updateCartItemQuantity(id, newQty)
-
     if (type === "inc") dispatch(increaseQty(id))
     else dispatch(decreaseQty(id))
+
+    void updateCartItemQuantity(id, newQty)
   }
 
   const removeItem = async (id: string) => {
@@ -134,8 +136,7 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
                     <div className="flex items-center border rounded-md px-1 md:px-3 py-1">
                       <button
                         onClick={() => updateQuantity(item.id, "dec")}
-                        disabled={item.quantity <= 1}
-                        className={item.quantity <= 1 ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+                        className="cursor-pointer"
                       >
                         <HiMinus size={12}/>
                       </button>

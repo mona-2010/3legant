@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useForm, SubmitHandler } from "react-hook-form"
 import Link from "next/link"
-import { IoEyeOutline } from "react-icons/io5"
+import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
@@ -107,9 +107,15 @@ const SigninForm = () => {
           </div>
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)}
+            className="cursor-pointer"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
           >
-            <IoEyeOutline className="text-2xl" />
+            {showPassword ? (
+              <IoEyeOffOutline className="text-2xl" />
+            ) : (
+              <IoEyeOutline className="text-2xl" />
+            )}
           </button>
 
         </div>
@@ -122,7 +128,7 @@ const SigninForm = () => {
           <div className="flex items-center">
             <input
               type="checkbox"
-              className="w-6 h-6"
+              className="cursor-pointer w-6 h-6"
               {...register("remember")}
             />
             <p className="ml-2">Remember me</p>
@@ -138,7 +144,7 @@ const SigninForm = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
+          className="cursor-pointer w-full text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
         >
           {isSubmitting ? "Signing in..." : "Sign In"}
         </button>

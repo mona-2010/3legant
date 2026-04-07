@@ -99,6 +99,15 @@ const wishlistSlice = createSlice({
       state.productIds = Array.from(new Set(action.payload))
       state.status = "succeeded"
     },
+    addWishlistProductId: (state, action: PayloadAction<string>) => {
+      if (!state.productIds.includes(action.payload)) {
+        state.productIds.push(action.payload)
+      }
+    },
+    removeWishlistProductId: (state, action: PayloadAction<string>) => {
+      state.productIds = state.productIds.filter((id) => id !== action.payload)
+      delete state.colorPreferences[action.payload]
+    },
     setColorPreference: (state, action: PayloadAction<{ productId: string; color: string | null }>) => {
       state.colorPreferences[action.payload.productId] = action.payload.color
     },
@@ -120,19 +129,35 @@ const wishlistSlice = createSlice({
         state.status = "failed"
         state.error = action.payload || "Failed to load wishlist"
       })
-      .addCase(addToWishlist.fulfilled, (state, action) => {
-        if (!state.productIds.includes(action.payload.productId)) {
-          state.productIds.push(action.payload.productId)
+      .addCase(addToWishlist.pending, (state, action) => {
+        const { productId } = action.meta.arg
+        if (!state.productIds.includes(productId)) {
+          state.productIds.push(productId)
         }
       })
+      .addCase(addToWishlist.fulfilled, (state, action) => {
+      })
+      .addCase(addToWishlist.rejected, (state, action) => {
+        const productId = action.meta.arg.productId
+        state.productIds = state.productIds.filter((id) => id !== productId)
+      })
+      .addCase(removeFromWishlist.pending, (state, action) => {
+        const { productId } = action.meta.arg
+        state.productIds = state.productIds.filter((id) => id !== productId)
+        delete state.colorPreferences[productId]
+      })
       .addCase(removeFromWishlist.fulfilled, (state, action) => {
-        state.productIds = state.productIds.filter((id) => id !== action.payload)
-        delete state.colorPreferences[action.payload]
+      })
+      .addCase(removeFromWishlist.rejected, (state, action) => {
+        const productId = action.meta.arg.productId
+        if (!state.productIds.includes(productId)) {
+          state.productIds.push(productId)
+        }
       })
   },
 })
 
-export const { clearWishlistState, setWishlistProductIds, setColorPreference } = wishlistSlice.actions
+export const { clearWishlistState, setWishlistProductIds, addWishlistProductId, removeWishlistProductId, setColorPreference } = wishlistSlice.actions
 
 export const selectWishlistProductIds = (state: RootState) => state.wishlist.productIds
 export const selectIsWishlisted = (productId: string) => (state: RootState) =>

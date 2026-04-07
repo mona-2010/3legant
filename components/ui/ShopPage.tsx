@@ -98,7 +98,7 @@ const ShopPage = () => {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(normalizeCategoryParam(e.target.value))}
-                  className="border px-2 py-2 rounded-md w-full md:w-[260px] lg:w-[262px]"
+                  className="cursor-pointer border px-2 py-2 rounded-md w-full md:w-[260px] lg:w-[262px]"
                 >
                   {categoryFilters.map((category) => (
                     <option key={category} value={category}>
@@ -115,7 +115,7 @@ const ShopPage = () => {
                 <select
                   value={selectedPrices[0] || "all"}
                   onChange={(e) => setSelectedPrices([e.target.value])}
-                  className="border px-2 py-2 rounded-md w-full md:w-[260px] lg:w-[262px]"
+                  className="cursor-pointer border px-2 py-2 rounded-md w-full md:w-[260px] lg:w-[262px]"
                 >
                   {prices.map((price) => (
                     <option key={price} value={price}>

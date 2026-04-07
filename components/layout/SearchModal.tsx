@@ -5,11 +5,14 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { RxCross2 } from "react-icons/rx";
 import TintedProductImage from "./TintedProductImage";
+import { getEffectiveProductPrice } from "@/lib/utils/product-pricing";
 
 interface Product {
   id: string;
   title: string;
   price: number;
+  original_price?: number;
+  valid_until?: string | null;
   image: string;
   color?: string[];
 }
@@ -65,13 +68,17 @@ export default function SearchModal({ open, setOpen }: Props) {
       const requestId = ++searchRequestSeqRef.current;
       const { data } = await supabase
         .from("products")
-        .select("id,title,price,image,color")
+        .select("id,title,price,original_price,valid_until,image,color")
         .ilike("title", `%${trimmed}%`)
         .limit(6);
 
       if (requestId !== searchRequestSeqRef.current) return;
       lastSearchedQueryRef.current = trimmed;
-      setResults((data as Product[]) || []);
+      const normalized = ((data as Product[]) || []).map((product) => ({
+        ...product,
+        price: getEffectiveProductPrice(product),
+      }));
+      setResults(normalized);
     }, 300);
 
     return () => clearTimeout(timer);

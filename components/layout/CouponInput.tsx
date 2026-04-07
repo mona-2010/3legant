@@ -94,7 +94,7 @@ export default function CouponInput({ subtotal }: { subtotal: number }) {
             <button
               onClick={() => handleApply()}
               disabled={loading || !code.trim()}
-              className="bg-black text-white px-6 py-3 text-sm font-medium disabled:opacity-50 rounded-r"
+              className="cursor-pointer bg-black text-white px-6 py-3 text-sm font-medium disabled:opacity-50 rounded-r"
             >
               {loading ? "..." : "Apply"}
             </button>
@@ -127,7 +127,7 @@ export default function CouponInput({ subtotal }: { subtotal: number }) {
                       type="button"
                       onClick={() => handleApply(suggestion.coupon.code)}
                       disabled={loading || !suggestion.isEligible}
-                      className="border border-black text-black px-3 py-1.5 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="cursor-pointer border border-black text-black px-3 py-1.5 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Apply
                     </button>
@@ -149,7 +149,7 @@ export default function CouponInput({ subtotal }: { subtotal: number }) {
             </span>
             <button
               onClick={handleRemove}
-              className="text-emerald-500 text-sm font-medium hover:underline"
+              className="cursor-pointer text-emerald-500 text-sm font-medium hover:underline"
             >
               [Remove]
             </button>

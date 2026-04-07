@@ -64,7 +64,7 @@ const ForgotPwdForm = () => {
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
+                    className="cursor-pointer w-full text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
                 >
                     {isSubmitting ? "Sending link..." : "Send Reset Link"}
                 </button>

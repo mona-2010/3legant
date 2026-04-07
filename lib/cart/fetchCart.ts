@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client"
 import { CartItem } from "@/types/index"
+import { getEffectiveProductPrice } from "@/lib/utils/product-pricing"
 
 const CART_FETCH_TTL_MS = 1200
 const cartFetchInFlightByUser = new Map<string, Promise<CartItem[]>>()
@@ -44,6 +45,8 @@ export async function fetchCart(userId?: string): Promise<CartItem[]> {
           id,
           title,
           price,
+          original_price,
+          valid_until,
           image,
           stock,
           is_active
@@ -63,7 +66,11 @@ export async function fetchCart(userId?: string): Promise<CartItem[]> {
       product_id: row.product_id,
       name: row.product?.title || "Unknown Product",
       image: row.product?.image || "",
-      price: row.product?.price || 0,
+      price: getEffectiveProductPrice({
+        price: row.product?.price || 0,
+        original_price: row.product?.original_price,
+        valid_until: row.product?.valid_until,
+      }),
       quantity: row.quantity,
       color: row.color,
       stock: row.product?.stock,

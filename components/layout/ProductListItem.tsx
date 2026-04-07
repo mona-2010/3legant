@@ -26,10 +26,11 @@ type Props = {
   liked: boolean
   onWishlist: (e: React.MouseEvent, productId: string) => void
   onAddToCart: (e: React.MouseEvent, id: string, title: string, color?: string[], stock?: number) => void
+  isAddingToCart: boolean
   currentProductQty: number
 }
 
-export default function ProductListItem({ product, grid, liked, onWishlist, onAddToCart, currentProductQty }: Props) {
+export default function ProductListItem({ product, grid, liked, onWishlist, onAddToCart, isAddingToCart, currentProductQty }: Props) {
   const { id, title, description, price, original_price, valid_until, image, color, rating = 0, is_new = false } = product
   const offerEnd = valid_until ? new Date(valid_until).getTime() : null
   const hasDiscount = !!(original_price && original_price > price && offerEnd && offerEnd > Date.now())
@@ -56,7 +57,7 @@ export default function ProductListItem({ product, grid, liked, onWishlist, onAd
     <div className="flex justify-center w-full lg:w-[50%] mt-2">
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onWishlist(e, id) }}
-        className="flex items-center"
+        className="cursor-pointer flex items-center"
       >
         {liked ? (
           <GoHeartFill className="text-3xl bg-white p-2 md:p-1 rounded-full transition text-red-500" />
@@ -83,15 +84,15 @@ export default function ProductListItem({ product, grid, liked, onWishlist, onAd
             {priceBlock}
             <button
               onClick={(e) => onAddToCart(e, id, title, color, product.stock)}
-              className="mt-4 px-6 py-2 bg-black text-white w-full md:w-[40%] rounded-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-              disabled={isOutOfStock || isStockLimitReached}
+              className="cursor-pointer mt-4 px-6 py-2 bg-black text-white w-full md:w-[40%] rounded-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+              disabled={isOutOfStock || isStockLimitReached || isAddingToCart}
             >
-              {isOutOfStock ? "Out of Stock" : isStockLimitReached ? "Stock Limit Reached" : "Add to cart"}
+              {isOutOfStock ? "Out of Stock" : isStockLimitReached ? "Stock Limit Reached" : isAddingToCart ? "Adding..." : "Add to cart"}
             </button>
             <div className="flex justify-center w-full md:w-[40%] mt-2">
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onWishlist(e, id) }}
-                className="flex items-center"
+                className="cursor-pointer flex items-center"
               >
                 {liked ? (
                   <GoHeartFill className="text-3xl bg-white p-2 md:p-1 rounded-full transition text-red-500" />
@@ -124,10 +125,10 @@ export default function ProductListItem({ product, grid, liked, onWishlist, onAd
           <div className="w-full">
             <button
               onClick={(e) => onAddToCart(e, id, title, color, product.stock)}
-              className="mt-4 px-0 py-2 text-[12px] md:text-[16px] bg-black text-white w-full lg:w-[50%] rounded-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-              disabled={isOutOfStock || isStockLimitReached}
+              className="cursor-pointer mt-4 px-0 py-2 text-[12px] md:text-[16px] bg-black text-white w-full lg:w-[50%] rounded-md disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+              disabled={isOutOfStock || isStockLimitReached || isAddingToCart}
             >
-              {isOutOfStock ? "Out of Stock" : isStockLimitReached ? "Stock Limit Reached" : "Add to cart"}
+              {isOutOfStock ? "Out of Stock" : isStockLimitReached ? "Stock Limit Reached" : isAddingToCart ? "Adding..." : "Add to cart"}
             </button>
           </div>
           {wishlistBtn}
