@@ -40,8 +40,8 @@ const Footer = () => {
 
                     <div className="flex flex-col md:flex-row-reverse">
                         <div className="flex justify-center font-poppins font-semibold text-[14px] text-white mt-8 md:my-auto">
-                            <a href="" className="mr-7">Privacy Policy</a>
-                            <a href="">Terms of Use</a>
+                            <Link href="/privacy-policy" className="mr-7">Privacy Policy</Link>
+                            <Link href="/terms-of-use">Terms of Use</Link>
                         </div>
                         <p className="text-bright-gray text-sm font-normal text-center mt-7 md:mr-7 md:my-auto">
                             Copyright © 2023 3legant. All rights reserved

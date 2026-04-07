@@ -12,6 +12,8 @@ import OrderExpandedRow from "./OrderExpandedRow"
 import OrdersSkeleton from "../common/OrdersSkeleton"
 import { AiOutlineLoading } from "react-icons/ai"
 import { useAuth } from "@/components/providers/AuthProvider"
+import ConfirmationModal from "@/components/common/ConfirmationModal"
+import { XCircle } from "lucide-react"
 
 const orderStatusColors: Record<OrderStatus, string> = {
   pending: "bg-yellow-100 text-yellow-700",
@@ -54,6 +56,8 @@ const OrdersPage = () => {
   const [dateFilter, setDateFilter] = useState<"all" | "7d" | "30d" | "90d">("all")
   const [storeSettings, setStoreSettings] = useState<Record<string, any>>({})
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null)
   const lastRealtimeEventKeyRef = useRef<string | null>(null)
   const settingsLoadedRef = useRef(false)
   const inFlightRequestKeyRef = useRef<string | null>(null)
@@ -204,11 +208,19 @@ const OrdersPage = () => {
   }
 
   const handleCancelOrder = async (orderId: string) => {
-    if (!confirm("Are you sure you want to cancel this order?")) return
+    setOrderToCancel(orderId);
+    setIsCancelModalOpen(true);
+  }
 
+  const confirmCancelOrder = async () => {
+    if (!orderToCancel) return;
+    
+    const orderId = orderToCancel;
     setCancellingId(orderId)
     const { error } = await cancelOrder(orderId)
     setCancellingId(null)
+    setIsCancelModalOpen(false)
+    setOrderToCancel(null)
 
     if (error) { toast.error(error); return }
 
@@ -424,6 +436,16 @@ const OrdersPage = () => {
           </div>
         </>
       )}
+      <ConfirmationModal 
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={confirmCancelOrder}
+        title="Cancel Order"
+        message="Are you sure you want to cancel this order? This action cannot be undone."
+        confirmText="Confirm Cancellation"
+        variant="danger"
+        icon={XCircle}
+      />
     </div>
   )
 }

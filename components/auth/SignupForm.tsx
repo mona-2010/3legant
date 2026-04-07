@@ -65,7 +65,7 @@ const SignupForm = () => {
   }
 
   return (
-    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-10 md:ml-25 text-gray-200">
+    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-5 md:ml-10 lg:ml-25 text-gray-200">
       <h1 className="font-poppins text-[40px] font-[500] text-[#141718] leading-10">
         Sign up
       </h1>
@@ -84,13 +84,12 @@ const SignupForm = () => {
             {...register("name", { required: "Name is required" })}
             placeholder="Your name"
           />
-
-          {errors.name && (
-            <p className="text-red-500 text-sm mb-4">
-              {errors.name.message}
-            </p>
-          )}
         </div>
+        {errors.name && (
+          <p className="text-red-500 text-sm mb-4">
+            {errors.name.message}
+          </p>
+        )}
 
         <div className="border-b border-lightgray py-2">
           <input
@@ -104,12 +103,12 @@ const SignupForm = () => {
             })}
             placeholder="Username"
           />
-          {errors.username && (
-            <p className="text-red-500 text-sm mb-4">
-              {errors.username.message}
-            </p>
-          )}
         </div>
+        {errors.username && (
+          <p className="text-red-500 text-sm mb-4">
+            {errors.username.message}
+          </p>
+        )}
 
         <div className="border-b border-lightgray py-2">
           <input
@@ -124,17 +123,17 @@ const SignupForm = () => {
             })}
             placeholder="Email address"
           />
-          {errors.email && (
-            <p className="text-red-500 text-sm mb-4">
-              {errors.email.message}
-            </p>
-          )}
         </div>
+        {errors.email && (
+          <p className="text-red-500 text-sm mb-4">
+            {errors.email.message}
+          </p>
+        )}
 
-        <div className="flex border-b border-lightgray items-center mb-5 py-2 focus:outline-none">
+        <div className="flex border-b border-lightgray items-center py-2 focus:outline-none">
           <input
             type={showPassword ? "text" : "password"}
-            className="custom-input w-full mb-2 focus:outline-none"
+            className="flex custom-input w-full mb-2 focus:outline-none"
             {...register("password", {
               required: "Password is required",
               minLength: {

@@ -67,7 +67,7 @@ export default function SearchModal({ open, setOpen }: Props) {
         .from("products")
         .select("id,title,price,image,color")
         .ilike("title", `%${trimmed}%`)
-        .limit(4);
+        .limit(6);
 
       if (requestId !== searchRequestSeqRef.current) return;
       lastSearchedQueryRef.current = trimmed;
@@ -99,8 +99,8 @@ export default function SearchModal({ open, setOpen }: Props) {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search products..."
-          className="w-full border p-3 rounded-md"
+          placeholder="Enter a product name..."
+          className="w-full border-b-2 border-gray-300 focus:border-black-900 outline-none py-3"
         />
         <div className="mt-4 flex flex-col gap-4">
           {results.map((product) => (

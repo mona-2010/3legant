@@ -56,7 +56,7 @@ const SigninForm = () => {
   }
 
   return (
-    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-10 md:ml-25 text-gray-200">
+    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-5 md:ml-10 lg:ml-25 text-gray-200">
       <h1 className="font-poppins text-[40px] font-[500] text-[#141718] leading-15">
         Sign In
       </h1>
@@ -89,32 +89,35 @@ const SigninForm = () => {
           </p>
         )}
 
-        <div className="flex justify-between items-center mt-4 border-b border-lightgray pb-2">
-          <input
-            type={showPassword ? "text" : "password"}
-            className="custom-input w-full mb-1 focus:outline-none"
-            placeholder="Password"
-            {...register("password", {
-              required: "Password is required",
-              minLength: {
-                value: 6,
-                message: "Password must be at least 6 characters",
-              },
-            })}
-          />
-          {errors.password && (
-            <p className="text-red-500 text-sm mb-4">
-              {errors.password.message}
-            </p>
-          )}
+        <div className="flex justify-between items-center mt-4 pb-2 border-b border-lightgray w-full">
+          <div className="flex flex-col">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="custom-input w-full mb-1 focus:outline-none"
+              placeholder="Password"
+              {...register("password", {
+                required: "Password is required",
+                minLength: {
+                  value: 6,
+                  message: "Password must be at least 6 characters",
+                },
+              })}
+            />
+
+          </div>
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
           >
             <IoEyeOutline className="text-2xl" />
           </button>
-        </div>
 
+        </div>
+        {errors.password && (
+          <p className="text-red-500 text-sm mb-4">
+            {errors.password.message}
+          </p>
+        )}
         <div className="flex mt-5 justify-between items-center">
           <div className="flex items-center">
             <input

@@ -14,10 +14,13 @@ import SafeImage from '../common/SafeImage'
 import { getBlogImageUrl } from '@/lib/blogs/images'
 import { MdViewAgenda } from 'react-icons/md'
 import { PiColumnsFill } from 'react-icons/pi'
+import { getBlogs } from '@/lib/actions/blogs'
 
 type BlogPageProps = {
     blogs: BlogPost[]
 }
+
+const PAGE_SIZE = 6
 
 const formatBlogDate = (value: string) => {
     const date = new Date(value)
@@ -32,11 +35,47 @@ const formatBlogDate = (value: string) => {
 
 const BlogPage = ({ blogs }: BlogPageProps) => {
     const [activeTab, setActiveTab] = useState("all")
+    const [sortOrder, setSortOrder] = useState("newest")
     const [view, setView] = useState("grid3")
-    const [visibleCount, setVisibleCount] = useState(6)
-    const featuredBlogs = blogs.filter((blog) => blog.is_featured)
-    const filteredBlogs = activeTab === "featured" ? featuredBlogs : blogs
-    const visibleBlogs = filteredBlogs.slice(0, visibleCount)
+    const [allBlogs, setAllBlogs] = useState(blogs)
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const [hasMore, setHasMore] = useState(blogs.length === PAGE_SIZE)
+    const featuredBlogs = allBlogs.filter((blog) => blog.is_featured)
+    const filteredBlogs = activeTab === "featured" ? featuredBlogs : allBlogs
+    const sortedBlogs = [...filteredBlogs].sort((a, b) => {
+        const aTime = new Date(a.published_at).getTime()
+        const bTime = new Date(b.published_at).getTime()
+
+        if (sortOrder === "oldest") return aTime - bTime
+        return bTime - aTime
+    })
+    const visibleBlogs = sortedBlogs.slice(0, visibleCount)
+
+    const handleLoadMore = async () => {
+        if (isLoadingMore || !hasMore) return
+
+        setIsLoadingMore(true)
+        const { data, error } = await getBlogs({
+            limit: PAGE_SIZE,
+            offset: allBlogs.length,
+        })
+
+        if (error || !data) {
+            setIsLoadingMore(false)
+            return
+        }
+
+        setAllBlogs((prev) => {
+            const existingIds = new Set(prev.map((item) => item.id))
+            const incoming = data.filter((item) => !existingIds.has(item.id))
+            return [...prev, ...incoming]
+        })
+
+        setVisibleCount((prev) => prev + PAGE_SIZE)
+        setHasMore(data.length === PAGE_SIZE)
+        setIsLoadingMore(false)
+    }
 
     return (
         <div>
@@ -64,7 +103,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                     <button
                         onClick={() => {
                             setActiveTab("all")
-                            setVisibleCount(6)
+                            setVisibleCount(PAGE_SIZE)
                         }}
                         className={`${activeTab === "all"
                             ? "text-black border-b-2 border-black"
@@ -77,7 +116,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                     <button
                         onClick={() => {
                             setActiveTab("featured")
-                            setVisibleCount(3)
+                            setVisibleCount(PAGE_SIZE)
                         }}
                         className={`${activeTab === "featured"
                             ? "text-black border-b-2 border-black"
@@ -90,16 +129,16 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
 
                 <div className="flex items-center gap-4 my-4 md:mt-0 text-black">
                     <select
-                        value={activeTab}
+                        value={sortOrder}
                         onChange={(e) => {
                             const value = e.target.value
-                            setActiveTab(value)
-                            setVisibleCount(value === "featured" ? 3 : 6)
+                            setSortOrder(value)
+                            setVisibleCount(PAGE_SIZE)
                         }}
                         className="w-full md:w-auto px-4 py-2 text-[16px] focus:outline-none border md:border-0 rounded-md"
                     >
-                        <option value="all">All Blog</option>
-                        <option value="featured">Featured</option>
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
                     </select>
 
                     <div className="md:flex text-xl rounded-md p-1 gap-2 hidden md:block">
@@ -145,7 +184,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
             <div
                 className={`mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] gap-2 lg:gap-8
                 ${view === "grid3" && "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}
-                ${view === "grid2" && "grid grid-cols-1 sm:grid-cols-4"}
+                ${view === "grid2" && "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4"}
                 ${view === "grid1" && "grid grid-cols-2"}
                 ${view === "list" && "flex flex-col h-auto"}
                 `}
@@ -162,7 +201,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                                 alt={blog.title}
                                 width={800}
                                 height={500}
-                                className={`object-cover ${(view === "list" || view === "grid1") ? "max-w-auto md:max-w-[200px] h-50" : "w-full h-90"}`}
+                                className={`object-cover ${(view === "list" || view === "grid1") ? "max-w-auto md:max-w-[200px] h-50" : "w-full h-60 md:h-90"}`}
                             />
                         </Link>
 
@@ -177,13 +216,14 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                     </div>
                 ))}
             </div>
-            {visibleCount < filteredBlogs.length && (
+            {(visibleCount < sortedBlogs.length || hasMore) && (
                 <div className='text-center my-10'>
                     <button
-                        onClick={() => setVisibleCount(filteredBlogs.length)}
-                        className='border rounded-full px-6 py-2 hover:bg-black hover:text-white transition'
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        className='border rounded-full px-6 py-3 hover:bg-black hover:text-white transition'
                     >
-                        Show More
+                        {isLoadingMore ? 'Loading...' : 'Show More'}
                     </button>
                 </div>
             )}

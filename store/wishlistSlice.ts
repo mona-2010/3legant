@@ -4,6 +4,7 @@ import type { RootState } from "./store"
 
 type WishlistState = {
   productIds: string[]
+  colorPreferences: Record<string, string | null>
   status: "idle" | "loading" | "succeeded" | "failed"
   error: string | null
   userId: string | null
@@ -15,6 +16,7 @@ type WishlistRow = {
 
 const initialState: WishlistState = {
   productIds: [],
+  colorPreferences: {},
   status: "idle",
   error: null,
   userId: null,
@@ -52,8 +54,8 @@ export const fetchWishlist = createAsyncThunk<
 )
 
 export const addToWishlist = createAsyncThunk<
-  string,
-  { userId: string; productId: string },
+  { productId: string; color?: string | null },
+  { userId: string; productId: string; color?: string | null },
   { rejectValue: string }
 >("wishlist/addToWishlist", async ({ userId, productId }, { rejectWithValue }) => {
   const supabase = createClient()
@@ -63,7 +65,7 @@ export const addToWishlist = createAsyncThunk<
   })
 
   if (error) return rejectWithValue(error.message)
-  return productId
+  return { productId }
 })
 
 export const removeFromWishlist = createAsyncThunk<
@@ -88,6 +90,7 @@ const wishlistSlice = createSlice({
   reducers: {
     clearWishlistState: (state) => {
       state.productIds = []
+      state.colorPreferences = {}
       state.status = "idle"
       state.error = null
       state.userId = null
@@ -95,6 +98,9 @@ const wishlistSlice = createSlice({
     setWishlistProductIds: (state, action: PayloadAction<string[]>) => {
       state.productIds = Array.from(new Set(action.payload))
       state.status = "succeeded"
+    },
+    setColorPreference: (state, action: PayloadAction<{ productId: string; color: string | null }>) => {
+      state.colorPreferences[action.payload.productId] = action.payload.color
     },
   },
   extraReducers: (builder) => {
@@ -115,17 +121,18 @@ const wishlistSlice = createSlice({
         state.error = action.payload || "Failed to load wishlist"
       })
       .addCase(addToWishlist.fulfilled, (state, action) => {
-        if (!state.productIds.includes(action.payload)) {
-          state.productIds.push(action.payload)
+        if (!state.productIds.includes(action.payload.productId)) {
+          state.productIds.push(action.payload.productId)
         }
       })
       .addCase(removeFromWishlist.fulfilled, (state, action) => {
         state.productIds = state.productIds.filter((id) => id !== action.payload)
+        delete state.colorPreferences[action.payload]
       })
   },
 })
 
-export const { clearWishlistState, setWishlistProductIds } = wishlistSlice.actions
+export const { clearWishlistState, setWishlistProductIds, setColorPreference } = wishlistSlice.actions
 
 export const selectWishlistProductIds = (state: RootState) => state.wishlist.productIds
 export const selectIsWishlisted = (productId: string) => (state: RootState) =>

@@ -15,10 +15,13 @@ export async function getProducts(filters?: {
   limit?: number
   offset?: number
   isActive?: boolean
+  includeCount?: boolean
 }) {
   const supabase = createClient(cookies())
 
-  let query = supabase.from("products").select(PRODUCT_SELECT_FIELDS, { count: "exact" })
+  let query = filters?.includeCount
+    ? supabase.from("products").select(PRODUCT_SELECT_FIELDS, { count: "exact" })
+    : supabase.from("products").select(PRODUCT_SELECT_FIELDS)
 
   if (filters?.isActive !== undefined) {
     query = query.eq("is_active", filters.isActive)

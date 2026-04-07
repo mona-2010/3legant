@@ -4,6 +4,7 @@ import { RxCross2 } from "react-icons/rx";
 import CheckoutForm, { FormData } from "../forms/CheckOutForm";
 import CouponInput from "./CouponInput";
 import TintedProductImage from "./TintedProductImage";
+import { HiMinus, HiPlus } from "react-icons/hi";
 
 type Props = {
   cartItems: CartItem[];
@@ -73,15 +74,15 @@ const CheckoutDetail = ({
                       disabled={item.quantity <= 1}
                       className={item.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""}
                     >
-                      -
+                      <HiMinus size={12} />
                     </button>
-                    <span className="px-3 text-sm">{item.quantity}</span>
+                    <span className="px-3 text-md">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, "inc")}
                       disabled={typeof item.stock === "number" && item.quantity >= item.stock}
                       className={typeof item.stock === "number" && item.quantity >= item.stock ? "opacity-50 cursor-not-allowed" : ""}
                     >
-                      +
+                      <HiPlus size={12} />
                     </button>
                   </div>
                 </div>

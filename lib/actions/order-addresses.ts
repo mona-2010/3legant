@@ -52,11 +52,9 @@ export async function saveOrderAddresses(
       console.error("[AddressSync] Shipping insert failed:", insertError.message)
     } else {
       shippingAddressId = newShipping?.id || null
-      console.log(`[AddressSync] Created new shipping address ${shippingAddressId} for user ${userId}`)
     }
   }
 
-  // 2. Handle Billing Address
   let billingAddressId = null
   if (billing?.street_address) {
     const { data: existingBilling, error: billSearchError } = await adminClient
@@ -97,7 +95,6 @@ export async function saveOrderAddresses(
         console.error("[AddressSync] Billing insert failed:", billInsertError.message)
       } else {
         billingAddressId = newBilling?.id || null
-        console.log(`[AddressSync] Created new billing address ${billingAddressId} for user ${userId}`)
       }
     }
   }

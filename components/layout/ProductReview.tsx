@@ -9,6 +9,7 @@ import {
     toggleReviewLike,
     createReviewReply,
     deleteReviewReply,
+    canUserReviewProduct,
 } from "@/lib/actions/reviews"
 import { Review } from "@/types"
 import { toast } from "react-toastify"
@@ -41,6 +42,7 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
     const [reviewRating, setReviewRating] = useState(0)
     const [showForm, setShowForm] = useState(false)
     const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
+    const [canWriteReview, setCanWriteReview] = useState(false)
     const { user } = useAuth()
     const userId = user?.id ?? null
 
@@ -54,6 +56,20 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
     useEffect(() => {
         loadReviews()
     }, [loadReviews])
+
+    useEffect(() => {
+        const checkEligibility = async () => {
+            if (!userId) {
+                setCanWriteReview(false)
+                return
+            }
+
+            const { canReview } = await canUserReviewProduct(productId)
+            setCanWriteReview(canReview)
+        }
+
+        void checkEligibility()
+    }, [productId, userId])
 
     const avgRating = reviews.length > 0
         ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
@@ -111,10 +127,11 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
         const { error } = await deleteReview(reviewId)
         if (error) {
             toast.error(error)
-            return
+            return false
         }
         toast.success("Review deleted")
         loadReviews()
+        return true
     }
 
     const handleToggleLike = async (reviewId: string) => {
@@ -153,11 +170,12 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
         const { error } = await deleteReviewReply(replyId)
         if (error) {
             toast.error(error)
-            return
+            return false
         }
 
         toast.success("Reply deleted")
         await loadReviews()
+        return true
     }
 
     const visibleReviews = reviews.slice(0, visibleCount)
@@ -172,12 +190,14 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
             <p className="mt-2">{productTitle}</p>
 
             {!showForm ? (
-                <ReviewEntry
-                    userId={userId}
-                    reviews={reviews}
-                    onStartEditingReview={startEditingReview}
-                    onShowForm={() => setShowForm(true)}
-                />
+                canWriteReview ? (
+                    <ReviewEntry
+                        userId={userId}
+                        reviews={reviews}
+                        onStartEditingReview={startEditingReview}
+                        onShowForm={() => setShowForm(true)}
+                    />
+                ) : null
             ) : (
                 <ReviewForm
                     reviewRating={reviewRating}
@@ -201,9 +221,9 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
             />
 
             {loading ? (
-                <p className="mt-10 text-gray-500">Loading reviews...</p>
+                <p className="mt-4 md:mt-10 text-gray-500">Loading reviews...</p>
             ) : reviews.length === 0 ? (
-                <p className="mt-10 text-gray-500">No reviews yet. Be the first to review this product!</p>
+                <p className="mt-4 md:mt-10 text-gray-500">No reviews yet. Be the first to review this product!</p>
             ) : (
                 <div className="mt-10 space-y-10">
                     {visibleReviews.map((review) => (
@@ -237,7 +257,6 @@ const ProductReviews = ({ productId, productTitle, shortDescription, measurement
 
     return (
         <div className="mt-10 md:mt-20">
-            {/* Mobile Accordion */}
             <div className="md:hidden flex flex-col w-full">
                 <div>
                     <TabButton tab="info" activeTab={activeTab} onClick={setActiveTab} label="Additional Info" />

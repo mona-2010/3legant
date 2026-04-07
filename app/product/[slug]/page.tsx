@@ -26,6 +26,7 @@ import {
     fetchWishlist,
     removeFromWishlist,
     selectIsWishlisted,
+    setColorPreference,
 } from "@/store/wishlistSlice";
 
 type Product = {
@@ -75,6 +76,22 @@ export default function ProductDetailPage() {
         dispatch(fetchWishlist({ userId }));
     }, [dispatch, userId]);
 
+    useEffect(() => {
+        const colors = product?.color ?? [];
+
+        if (colors.length === 0) {
+            setSelectedColorIndex(null);
+            return;
+        }
+
+        setSelectedColorIndex((prev) => {
+            if (prev !== null && prev < colors.length) {
+                return prev;
+            }
+            return 0;
+        });
+    }, [product?.id, product?.color]);
+
     const productImages = product
         ? [...(product.image ? [product.image] : []), ...(product.images || []).filter((img) => img !== product.image)]
         : [];
@@ -108,7 +125,7 @@ export default function ProductDetailPage() {
     }, [product?.valid_until]);
 
 
-    const toggleWishlist = async () => {
+    const toggleWishlist = async (selectedColor?: string | null) => {
         if (!userId) {
             toast.error("Login to add items to wishlist");
             return;
@@ -123,8 +140,9 @@ export default function ProductDetailPage() {
                 toast.error((result.payload as string) || "Could not remove from wishlist");
             }
         } else {
-            const result = await dispatch(addToWishlist({ userId, productId: product.id }));
+            const result = await dispatch(addToWishlist({ userId, productId: product.id, color: selectedColor }));
             if (addToWishlist.fulfilled.match(result)) {
+                dispatch(setColorPreference({ productId: product.id, color: selectedColor || null }));
                 toast.success("Added to wishlist");
             } else {
                 toast.error((result.payload as string) || "Could not add to wishlist");

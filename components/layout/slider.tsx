@@ -6,9 +6,6 @@ import slider1 from "@/app/assets/images/Living-Room.jpg";
 import slider2 from "@/app/assets/images/Living-Room2.jpg";
 import slider3 from "@/app/assets/images/living_room.png";
 import slider4 from "@/app/assets/images/Living-Room5.jpg";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 import Image from "next/image";
 
 const ImageSlider = () => {
@@ -20,12 +17,12 @@ const ImageSlider = () => {
   ];
 
   return (
-    <section className="mx-[32px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] relative">
-      <button className="custom-prev w-8 h-8 md:w-14 md:h-14 flex justify-center items-center rounded-full absolute z-40 top-1/2 -translate-y-1/2 bg-white left-10">
+    <section className="mx-[32px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] mb-10 relative">
+      <button className="hidden custom-prev w-8 h-8 md:w-14 md:h-14 md:flex justify-center items-center rounded-full absolute z-40 top-1/2 -translate-y-1/2 bg-white left-10">
         <ArrowLeft />
       </button>
 
-      <button className="custom-next w-8 h-8 md:w-14 md:h-14 flex justify-center items-center rounded-full absolute z-40 top-1/2 -translate-y-1/2 bg-white right-10">
+      <button className="hidden custom-next w-8 h-8 md:w-14 md:h-14 md:flex justify-center items-center rounded-full absolute z-40 top-1/2 -translate-y-1/2 bg-white right-10">
         <ArrowRight />
       </button>
 
@@ -34,7 +31,7 @@ const ImageSlider = () => {
         slidesPerView={1}
         loop
         autoplay={{
-          delay: 1000,
+          delay: 3000,
           disableOnInteraction: false,
         }}
         speed={500}
@@ -65,7 +62,7 @@ const ImageSlider = () => {
           </SwiperSlide>
         ))}
       </Swiper>
-      <div className="pagination absolute bottom-8 inset-x-0 mx-auto w-fit z-50 flex items-center justify-center gap-3 max-sm:bottom-4">
+      <div className="pagination absolute bottom-8 inset-x-0 mx-auto w-fit z-1 flex items-center justify-center gap-3 max-sm:bottom-4">
       </div>
     </section >
   );

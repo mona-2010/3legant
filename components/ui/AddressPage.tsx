@@ -6,6 +6,8 @@ import { RxCross1 } from "react-icons/rx"
 import { getUserAddresses, createAddress, updateAddress, deleteAddress, syncMissingAddressesFromOrders } from "@/lib/actions/addresses"
 import { UserAddress } from "@/types"
 import AddressSkeleton from "../common/AddressSkeleton"
+import { toast } from "react-toastify"
+import ConfirmDeleteModal from "../common/ConfirmDeleteModal"
 
 const AddressPage = () => {
     const [addresses, setAddresses] = useState<UserAddress[]>([])
@@ -13,6 +15,8 @@ const AddressPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingAddress, setEditingAddress] = useState<Partial<UserAddress> | null>(null)
     const [saving, setSaving] = useState(false)
+    const [deleteTarget, setDeleteTarget] = useState<UserAddress | null>(null)
+    const [deleting, setDeleting] = useState(false)
     const hasLoadedRef = useRef(false)
 
     const loadAddresses = async () => {
@@ -83,14 +87,24 @@ const AddressPage = () => {
     }
 
     const handleDelete = async (id: string) => {
-        await deleteAddress(id)
+        setDeleting(true)
+        const { error } = await deleteAddress(id)
+        setDeleting(false)
+
+        if (error) {
+            toast.error(error)
+            return
+        }
+
         setAddresses(prev => prev.filter(a => a.id !== id))
+        toast.success("Address deleted")
+        setDeleteTarget(null)
     }
 
     if (loading) return <AddressSkeleton />
 
     return (
-        <div className="flex flex-col py-4">
+        <div className="flex flex-col py-4 w-full">
             <div className="flex items-center justify-between pb-5 gap-5 md:gap-10">
                 <h2 className="text-[20px] font-[600]">Address</h2>
                 <button
@@ -105,21 +119,21 @@ const AddressPage = () => {
                 <p className="text-gray-500">No addresses saved yet.</p>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 w-full">
                 {addresses.map((item) => (
-                    <div key={item.id} className="border rounded-lg p-6 flex flex-col justify-between">
+                    <div key={item.id} className="border rounded-lg p-6 flex flex-col">
                         <div className="flex flex-row items-center gap-3 justify-between">
                             <p className="font-semibold capitalize">{item.type} Address</p>
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => handleEdit(item)}
-                                    className="flex items-center gap-1 text-sm text-gray-200 hover:text-blue-800 transition-colors"
+                                    className="cursor-pointer flex items-center gap-1 text-sm text-gray-200 hover:text-blue-800 transition-colors"
                                 >
                                     <BiEditAlt size={14} /> Edit
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(item.id)}
-                                    className="text-gray-200 hover:text-red-500 transition-colors"
+                                    onClick={() => setDeleteTarget(item)}
+                                    className="cursor-pointer text-gray-200 hover:text-red-500 transition-colors"
                                 >
                                     <RxCross1 size={12} />
                                 </button>
@@ -260,6 +274,16 @@ const AddressPage = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmDeleteModal
+                open={!!deleteTarget}
+                title="Delete address?"
+                description="This action cannot be undone. The address will be removed from your saved addresses."
+                confirmText="Delete Address"
+                loading={deleting}
+                onCancel={() => setDeleteTarget(null)}
+                onConfirm={() => deleteTarget ? handleDelete(deleteTarget.id) : undefined}
+            />
         </div>
     )
 }

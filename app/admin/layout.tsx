@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "react-toastify"
+import ConfirmationModal from "@/components/common/ConfirmationModal"
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -38,6 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [authorized, setAuthorized] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false)
 
   const pageTitle = navItems.find((item) => item.href === pathname)?.label || "Admin"
 
@@ -121,7 +123,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800 bg-black-950/80 backdrop-blur-sm">
           <button
-            onClick={handleLogout}
+            onClick={() => setIsSignOutModalOpen(true)}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 w-full transition-colors"
           >
             <LogOut size={18} />
@@ -149,6 +151,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         <div className="px-6 lg:px-10 py-7 md:py-8">{children}</div>
       </main>
+
+      <ConfirmationModal 
+        isOpen={isSignOutModalOpen}
+        onClose={() => setIsSignOutModalOpen(false)}
+        onConfirm={handleLogout}
+        title="Sign Out"
+        message="Are you sure you want to sign out? You will need to sign in again to access the admin dashboard."
+        confirmText="Log Out"
+        icon={LogOut}
+        variant="danger"
+      />
     </div>
   )
 }

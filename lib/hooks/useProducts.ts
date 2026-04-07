@@ -206,7 +206,7 @@ export function usePaginatedProducts({
       const supabase = createClient();
       let query: any = supabase
         .from("products")
-        .select("*", { count: "exact" })
+        .select("*")
         .eq("is_active", true);
 
       if (category !== "all") {
@@ -228,20 +228,21 @@ export function usePaginatedProducts({
         query = query.order("created_at", { ascending: false });
       }
 
-      query = query.range(offset, offset + pageSize - 1);
+      // Fetch one extra row to infer whether more pages exist without exact counts.
+      query = query.range(offset, offset + pageSize);
 
-      const { data, error, count } = await query;
+      const { data, error } = await query;
 
       if (error) {
         throw error;
       }
 
       const normalized = (data || []).map(normalizeProduct);
-      setProducts((prev) => (append ? [...prev, ...normalized] : normalized));
+      const hasExtraRow = normalized.length > pageSize;
+      const pageItems = hasExtraRow ? normalized.slice(0, pageSize) : normalized;
 
-      const nextCount = append ? offset + normalized.length : normalized.length;
-      const total = count ?? 0;
-      setHasMore(nextCount < total);
+      setProducts((prev) => (append ? [...prev, ...pageItems] : pageItems));
+      setHasMore(hasExtraRow);
     } catch (_error) {
       if (!append) {
         setProducts([]);

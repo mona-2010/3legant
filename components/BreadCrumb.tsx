@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { RiArrowRightSLine } from "react-icons/ri";
+import { RiArrowLeftSLine, RiArrowRightSLine } from "react-icons/ri";
 
 type Crumb = {
   title: string;
@@ -10,12 +10,32 @@ type Crumb = {
 
 type BreadcrumbProps = {
   currentPage: string;
-  crumbs?: Crumb[]; 
+  crumbs?: Crumb[];
+  showMobileBackOnly?: boolean;
+  backHref?: string;
+  backLabel?: string;
 };
 
-export default function Breadcrumb({ currentPage, crumbs = [] }: BreadcrumbProps) {
+export default function Breadcrumb({
+  currentPage,
+  crumbs = [],
+  showMobileBackOnly = false,
+  backHref = "/",
+  backLabel = "back",
+}: BreadcrumbProps) {
   return (
-    <nav className="font-inter flex items-center flex-wrap gap-2 text-[14px] leading-[18px] tracking-[0.01em] font-medium">
+    <div>
+      {showMobileBackOnly && (
+        <Link
+          href={backHref}
+          className="md:hidden inline-flex items-center text-[#605F5F] hover:text-baseblack transition-all"
+        >
+          <RiArrowLeftSLine />
+          <span>{backLabel}</span>
+        </Link>
+      )}
+
+      <nav className={`font-inter flex items-center flex-wrap gap-2 text-[14px] leading-[18px] tracking-[0.01em] font-medium ${showMobileBackOnly ? "hidden md:flex" : "flex"}`}>
       <Link
         className="text-[#605F5F] hover:text-baseblack transition-all"
         href="/"
@@ -38,6 +58,7 @@ export default function Breadcrumb({ currentPage, crumbs = [] }: BreadcrumbProps
         <RiArrowRightSLine />
         <p className="text-baseblack">{currentPage}</p>
       </span>
-    </nav>
+      </nav>
+    </div>
   );
 }

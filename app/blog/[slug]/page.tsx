@@ -21,7 +21,7 @@ const page = async ({ params }: PageProps) => {
     <div>
       <Header />
       <div className="page-content-container">
-        <div className='my-10'>
+        <div className='my-10'>           
           <BlogDetail blog={currentBlog} />
         </div>
         <Newsletter />

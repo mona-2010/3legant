@@ -161,6 +161,7 @@ export default function ProductCard({ product }: Props) {
           fill
           colorHex={primaryColor}
           className="object-contain p-6 mix-blend-multiply"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
         />
 
         {(!product.is_active || product.stock === 0) ? (

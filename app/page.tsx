@@ -2,14 +2,16 @@ import HomePage from "../components/ui/HomePage";
 import { redirect } from "next/navigation";
 
 type HomeProps = {
-  searchParams?: Record<string, string | string[] | undefined>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
-export default function Home({ searchParams }: HomeProps) {
-  if (typeof searchParams?.code === "string") {
+export default async function Home({ searchParams }: HomeProps) {
+  const resolvedSearchParams = (await searchParams) ?? {}
+
+  if (typeof resolvedSearchParams.code === "string") {
     const params = new URLSearchParams()
 
-    for (const [key, value] of Object.entries(searchParams)) {
+    for (const [key, value] of Object.entries(resolvedSearchParams)) {
       if (typeof value === "string") {
         params.set(key, value)
       }

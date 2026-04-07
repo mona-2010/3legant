@@ -36,7 +36,7 @@ const ResetForm = () => {
   }
 
   return (
-    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-10 md:ml-25 text-gray-200">
+    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-5 md:ml-10 lg:ml-25 text-gray-200">
       <h1 className="mb-20 font-poppins text-[40px] font-[500] text-[#141718] leading-10">
         Reset Password
       </h1>

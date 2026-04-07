@@ -9,6 +9,7 @@ import { buildShippingOptions, getShippingOptionPriceLabel } from "@/lib/shippin
 import { createClient } from "@/lib/supabase/client"
 import CouponInput from "./CouponInput"
 import TintedProductImage from "./TintedProductImage"
+import { HiMinus, HiPlus } from "react-icons/hi"
 
 interface Props {
   cartItems: CartItem[]
@@ -83,7 +84,7 @@ export default function ShoppingCart({
                     alt={item.name}
                     fill
                     colorHex={item.color}
-                    className="object-fit mix-blend-multiply"
+                    className="object-contain mix-blend-multiply"
                     sizes="(min-width: 640px) 80px, 80px"
                   />
                 </div>
@@ -97,7 +98,7 @@ export default function ShoppingCart({
                   </p>
                   <button
                     onClick={() => removeItem(item.id)}
-                    className="flex gap-1 items-center text-gray-400 text-[14px] hover:text-black transition"
+                    className="cursor-pointer flex gap-1 items-center text-gray-400 text-[14px] hover:text-black transition"
                   >
                     <RxCross2 />
                     Remove
@@ -110,19 +111,19 @@ export default function ShoppingCart({
                   <button
                     onClick={() => updateQuantity(item.id, "dec")}
                     disabled={item.quantity <= 1}
-                    className={item.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""}
+                    className={item.quantity <= 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer" }
                   >
-                    -
+                    <HiMinus size={12} />
                   </button>
-                  <span className="px-4">
+                  <span className="px-4 text-lg">
                     {item.quantity}
                   </span>
                   <button
                     onClick={() => updateQuantity(item.id, "inc")}
                     disabled={typeof item.stock === "number" && item.quantity >= item.stock}
-                    className={typeof item.stock === "number" && item.quantity >= item.stock ? "opacity-50 cursor-not-allowed" : ""}
+                    className={typeof item.stock === "number" && item.quantity >= item.stock ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   >
-                    +
+                    <HiPlus size={12} />
                   </button>
                 </div>
               </div>

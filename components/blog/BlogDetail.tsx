@@ -83,6 +83,8 @@ const BlogDetail = ({ blog }: BlogDetailProps) => {
                 crumbs={[
                     { title: 'Blog', href: '/blog' }
                 ]}
+                showMobileBackOnly
+                backHref="/blog"
             />
             <h5 className='uppercase font-[700] my-5 text-sm tracking-widest'>article</h5>
             <h1 className='w-full lg:w-[70%] font-[500] mb-5 font-poppins text-[38px] md:text-[54px] leading-[46px] md:leading-[58px]'>
@@ -154,7 +156,7 @@ const BlogDetail = ({ blog }: BlogDetailProps) => {
                     </div>
                 </div>
             </div>
-            {/* <Blog heading="You might also like" headingAs="h2" /> */}
+            <Blog heading="You might also like" headingAs="h2" containerClassName="mx-0" />
         </div>
     )
 }

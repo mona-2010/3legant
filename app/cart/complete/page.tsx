@@ -22,14 +22,12 @@ export default function CompletePage() {
   const lastOrderItems = useSelector((state: RootState) => state.cart.lastOrderItems)
 
   useEffect(() => {
-    console.log(`[CompletePage] Effect triggered. SessionId: ${sessionId}, HasLastOrder: ${!!lastOrder}`)
     if (!sessionId || lastOrder || finalizeCalled.current) return
 
     let channel: any = null
     let pollInterval: any = null
 
     const finalize = async () => {
-      console.log(`[CompletePage] Starting finalization for session: ${sessionId}`)
       finalizeCalled.current = true
       setLoading(true)
 
@@ -43,11 +41,9 @@ export default function CompletePage() {
 
       const order = data as any
         if (order) {
-          console.log(`[CompletePage] Order Detail Fetched:`, { id: order.id, status: order.status, userId: order.user_id })
           
           // Success: Status is already processing/completed
           if (order.status !== "pending") {
-            console.log(`[CompletePage] Order is finalized. Clearing local cart state and invalidating cache for ${order.user_id}...`)
             if (order.user_id) {
               invalidateCartCache(order.user_id)
             }
@@ -58,8 +54,6 @@ export default function CompletePage() {
             dispatch(clearCart())
             setLoading(false)
           } else {
-          // Waiting: Status is still pending, subscribe to Realtime AND Poll
-          console.log(`[CompletePage] Waiting for status update...`)
           
           const { createClient } = await import("@/lib/supabase/client")
           const supabase = createClient()
@@ -72,11 +66,9 @@ export default function CompletePage() {
               { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${order.id}` },
               async (payload: any) => {
                 const updatedOrder = payload.new as any
-                console.log(`[Realtime] Status updated: ${updatedOrder.status}`)
                 if (updatedOrder.status !== "pending") {
                   const { data: fullOrder } = await finalizeStripeOrder(sessionId)
                   if (fullOrder) {
-                    console.log(`[Realtime] Order confirmed via Realtime. Clearing Redux cart.`)
                     if (fullOrder.user_id) invalidateCartCache(fullOrder.user_id)
                     dispatch(setLastOrder({
                       order: fullOrder,
@@ -92,10 +84,8 @@ export default function CompletePage() {
 
           // 2. Polling Fallback (every 3 seconds)
           pollInterval = setInterval(async () => {
-             console.log(`[CompletePage] Polling for update...`)
              const { data: polledOrder } = await finalizeStripeOrder(sessionId)
              if (polledOrder && polledOrder.status !== "pending") {
-                console.log(`[Poll] Order confirmed via Poll. Clearing Redux cart.`)
                 clearInterval(pollInterval)
                 if (polledOrder.user_id) invalidateCartCache(polledOrder.user_id)
                 dispatch(setLastOrder({

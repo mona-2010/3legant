@@ -25,13 +25,14 @@ export async function getBlogs(filters?: BlogFilters) {
     query = query.eq("is_featured", true)
   }
 
-  if (filters?.limit) {
-    query = query.limit(filters.limit)
-  }
+  const hasLimit = typeof filters?.limit === "number"
+  const hasOffset = typeof filters?.offset === "number"
 
-  if (filters?.offset) {
-    const pageLimit = filters.limit || 10
-    query = query.range(filters.offset, filters.offset + pageLimit - 1)
+  if (hasOffset) {
+    const pageLimit = hasLimit ? filters!.limit! : 10
+    query = query.range(filters!.offset!, filters!.offset! + pageLimit - 1)
+  } else if (hasLimit) {
+    query = query.limit(filters!.limit!)
   }
 
   const { data, error } = await query

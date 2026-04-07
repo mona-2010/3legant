@@ -11,6 +11,7 @@ import {
 } from "@/store/cartSlice"
 import { removeCartItem, updateCartItemQuantity } from "@/lib/cart/mutations"
 import TintedProductImage from "./TintedProductImage"
+import { HiMinus, HiPlus } from "react-icons/hi"
 
 interface Props {
   cartOpen: boolean
@@ -99,7 +100,7 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
             cartItems.map(item => (
               <div
                 key={item.id}
-                className="flex items-start gap-4 border-b pb-6"
+                className="flex items-start gap-2 sm:gap-4 border-b pb-6"
               >
 
                 <div className="w-[80px] h-[96px] relative flex-shrink-0">
@@ -114,7 +115,7 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
                 </div>
 
                 <div className="flex-1 flex flex-col justify-between">
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row justify-between">
                     <div>
                       <h3 className="text-[14px] font-medium">
                         {item.name}
@@ -130,23 +131,23 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
 
                   </div>
                   <div className="flex justify-between items-center mt-4">
-                    <div className="flex items-center border rounded-md px-3 py-1">
+                    <div className="flex items-center border rounded-md px-1 md:px-3 py-1">
                       <button
                         onClick={() => updateQuantity(item.id, "dec")}
                         disabled={item.quantity <= 1}
-                        className={item.quantity <= 1 ? "cursor-pointer opacity-50" : "cursor-pointer"}
+                        className={item.quantity <= 1 ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
                       >
-                        −
+                        <HiMinus size={12}/>
                       </button>
-                      <span className="mx-4 text-[14px]">
+                      <span className="mx-4 text-md">
                         {item.quantity}
                       </span>
                       <button
                         onClick={() => updateQuantity(item.id, "inc")}
                         disabled={typeof item.stock === "number" && item.quantity >= item.stock}
-                        className={typeof item.stock === "number" && item.quantity >= item.stock ? "cursor-pointer opacity-50" : "cursor-pointer"}
+                        className={typeof item.stock === "number" && item.quantity >= item.stock ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
                       >
-                        +
+                        <HiPlus size={12} />
                       </button>
                     </div>
                     <RxCross2

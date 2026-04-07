@@ -10,7 +10,7 @@ const values = [
 ];
 const Values = () => {
 	return (
-		<section className="mt-12 mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px]">
+		<section className="mt-10 mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px]">
 			<div className="grid grid-cols-4 py-4 grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) max-lg:grid-cols-2 max-lg:gap-4 max-md:grid-cols-2 md:grid-template-columns: repeat(auto-fit, minmax(292px, 1fr)) max-md:gap-4 max-sm:grid-cols-2 max-sm:gap-2 mt-4 gap-6">
 				{values.map((value, index) => (
 					<div key={index} className="overflow-hidden max-sm:h-[176px]">

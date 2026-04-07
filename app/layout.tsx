@@ -3,8 +3,7 @@ import { Geist, Geist_Mono, Poppins, Inter } from "next/font/google";
 import "./globals.css";
 import ReduxProvider from "@/store/provider";
 import AuthProvider from "@/components/providers/AuthProvider";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import ToastProvider from "@/components/providers/ToastProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +36,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Ecommerce Website",
+  title: "3legant",
   description: "Shop products, manage your cart, and complete orders online.",
 };
 
@@ -56,7 +55,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
           </AuthProvider>
-          <ToastContainer position="bottom-right" autoClose={2000} hideProgressBar newestOnTop />
+          <ToastProvider />
         </ReduxProvider>
       </body>
     </html>

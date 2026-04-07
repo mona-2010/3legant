@@ -4,7 +4,7 @@ import Image from "next/image";
 
 const AboutBanner = () => {
     return (
-        <section className="my-12">
+        <section className="my-10">
             <div className="flex flex-col lg:flex-row">
                 <Image
                     src={living_room_2}

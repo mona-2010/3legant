@@ -5,6 +5,44 @@ import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { Review, ReviewReply } from "@/types"
 
+async function hasUserOrderedProduct(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  productId: string
+) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id, order_items!inner(product_id)")
+    .eq("user_id", userId)
+    .in("status", ["processing", "shipped", "delivered", "refunded"])
+    .eq("order_items.product_id", productId)
+    .limit(1)
+
+  if (error) return { ordered: false, error: error.message }
+  return { ordered: !!(data && data.length > 0), error: null }
+}
+
+export async function canUserReviewProduct(productId: string) {
+  const supabase = createClient(cookies())
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return { canReview: false, error: "You must be logged in to write a review" }
+  }
+
+  const { ordered, error } = await hasUserOrderedProduct(supabase, user.id, productId)
+  if (error) return { canReview: false, error }
+
+  return {
+    canReview: ordered,
+    error: ordered ? null : "Only customers who ordered this product can write a review",
+  }
+}
+
 export async function getReviews(productId: string, sort: string = "newest") {
   const supabase = createClient(cookies())
   const {
@@ -86,6 +124,20 @@ export async function createReview(review: {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { data: null, error: "You must be logged in to write a review" }
+  }
+
+  const { ordered, error: orderCheckError } = await hasUserOrderedProduct(
+    supabase,
+    user.id,
+    review.product_id
+  )
+
+  if (orderCheckError) {
+    return { data: null, error: orderCheckError }
+  }
+
+  if (!ordered) {
+    return { data: null, error: "Only customers who ordered this product can write a review" }
   }
 
   const userName =

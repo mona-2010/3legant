@@ -8,16 +8,17 @@ import { StarRating } from "@/components/layout/ProductSlider"
 import { Review } from "@/types"
 import { timeAgo } from "./helpers"
 import { BiEditAlt, BiTrash } from "react-icons/bi"
+import ConfirmDeleteModal from "@/components/common/ConfirmDeleteModal"
 
 interface ReviewItemProps {
     review: Review
     userId: string | null
     isOwner: boolean
     onEdit: (review: Review) => void
-    onDelete: (reviewId: string) => void
+    onDelete: (reviewId: string) => Promise<boolean>
     onToggleLike: (reviewId: string) => Promise<void>
     onAddReply: (reviewId: string, text: string) => Promise<boolean>
-    onDeleteReply: (replyId: string) => Promise<void>
+    onDeleteReply: (replyId: string) => Promise<boolean>
 }
 
 export default function ReviewItem({
@@ -34,6 +35,9 @@ export default function ReviewItem({
     const [replying, setReplying] = useState(false)
     const [showReplyModal, setShowReplyModal] = useState(false)
     const [deletingReplyId, setDeletingReplyId] = useState<string | null>(null)
+    const [deleteReviewOpen, setDeleteReviewOpen] = useState(false)
+    const [deletingReview, setDeletingReview] = useState(false)
+    const [deleteReplyTarget, setDeleteReplyTarget] = useState<string | null>(null)
 
     const handleReplySubmit = async () => {
         if (!replyText.trim()) return
@@ -48,8 +52,26 @@ export default function ReviewItem({
 
     const handleDeleteReply = async (replyId: string) => {
         setDeletingReplyId(replyId)
-        await onDeleteReply(replyId)
+        const result = await onDeleteReply(replyId)
         setDeletingReplyId(null)
+
+        if (result) {
+            setDeleteReplyTarget(null)
+        }
+    }
+
+    const handleDeleteReview = async () => {
+        setDeletingReview(true)
+        try {
+            const deleted = await onDelete(review.id)
+            if (deleted) {
+                setDeleteReviewOpen(false)
+            }
+        } catch (error) {
+            // Parent handler already surfaces the error toast.
+        } finally {
+            setDeletingReview(false)
+        }
     }
 
     return (
@@ -75,14 +97,14 @@ export default function ReviewItem({
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => onEdit(review)}
-                                className="hover:text-blue-600 transition"
+                                className="cursor-pointer hover:text-blue-600 transition"
                                 aria-label="Edit review"
                             >
                                 <BiEditAlt size={20} />
                             </button>
                             <button
-                                onClick={() => onDelete(review.id)}
-                                className="text-red-500 hover:text-red-700 transition"
+                                onClick={() => setDeleteReviewOpen(true)}
+                                className="cursor-pointer text-red-500 hover:text-red-700 transition"
                                 aria-label="Delete review"
                             >
                                 <BiTrash size={20} />
@@ -99,7 +121,7 @@ export default function ReviewItem({
                 <div className="mt-4 flex items-center gap-4 text-sm">
                     <button
                         onClick={() => onToggleLike(review.id)}
-                        className={`inline-flex items-center gap-1 transition ${review.liked_by_me ? "text-red-600" : "text-gray-600 hover:text-black"}`}
+                        className={`cursor-pointer inline-flex items-center gap-1 transition ${review.liked_by_me ? "text-red-600" : "text-gray-600 hover:text-black"}`}
                         aria-label={review.liked_by_me ? "Unlike review" : "Like review"}
                     >
                         <GoHeart
@@ -112,7 +134,7 @@ export default function ReviewItem({
                     {userId && (
                         <button
                             onClick={() => setShowReplyModal(true)}
-                            className="text-gray-600 hover:text-black transition"
+                            className="cursor-pointer text-gray-600 hover:text-black transition"
                         >
                             Reply
                         </button>
@@ -147,9 +169,9 @@ export default function ReviewItem({
 
                                     {userId === reply.user_id && (
                                         <button
-                                            onClick={() => handleDeleteReply(reply.id)}
+                                            onClick={() => setDeleteReplyTarget(reply.id)}
                                             disabled={deletingReplyId === reply.id}
-                                            className="text-gray-500 hover:text-red-600 transition disabled:opacity-50"
+                                            className="cursor-pointer text-gray-500 hover:text-red-600 transition disabled:opacity-50"
                                             aria-label="Delete reply"
                                         >
                                             <RxCross1 size={14} />
@@ -179,14 +201,14 @@ export default function ReviewItem({
                         <div className="mt-4 flex justify-end gap-3">
                             <button
                                 onClick={() => setShowReplyModal(false)}
-                                className="px-4 py-2 text-sm rounded-full border border-lightgray text-gray-700 hover:bg-gray-100 transition"
+                                className="cursor-pointer px-4 py-2 text-sm rounded-full border border-lightgray text-gray-700 hover:bg-gray-100 transition"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleReplySubmit}
                                 disabled={replying || !replyText.trim()}
-                                className="px-4 py-2 text-sm rounded-full border border-black text-black hover:bg-black hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="cursor-pointer px-4 py-2 text-sm rounded-full border border-black text-black hover:bg-black hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {replying ? "Replying..." : "Post Reply"}
                             </button>
@@ -194,6 +216,26 @@ export default function ReviewItem({
                     </div>
                 </div>
             )}
+
+            <ConfirmDeleteModal
+                open={deleteReviewOpen}
+                title="Delete review?"
+                description="This will permanently remove your review from this product."
+                confirmText="Delete Review"
+                loading={deletingReview}
+                onCancel={() => setDeleteReviewOpen(false)}
+                onConfirm={handleDeleteReview}
+            />
+
+            <ConfirmDeleteModal
+                open={!!deleteReplyTarget}
+                title="Delete reply?"
+                description="This will permanently remove your reply from this review."
+                confirmText="Delete Reply"
+                loading={!!deleteReplyTarget && deletingReplyId === deleteReplyTarget}
+                onCancel={() => setDeleteReplyTarget(null)}
+                onConfirm={() => deleteReplyTarget ? handleDeleteReply(deleteReplyTarget) : undefined}
+            />
         </div>
     )
 }

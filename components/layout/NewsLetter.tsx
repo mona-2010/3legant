@@ -8,7 +8,7 @@ import Link from "next/link"
 
 const Newsletter = () => {
   return (
-    <section className="relative overflow-hidden mt-8 bg-[#F2F4F6]">
+    <section className="relative overflow-hidden mt-4 md:mt-10 bg-[#F2F4F6]">
       <Image
         src={drawer}
         alt="drawer"

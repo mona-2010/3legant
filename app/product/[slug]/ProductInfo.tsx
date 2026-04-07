@@ -4,6 +4,7 @@ import Link from "next/link"
 import { GoHeart, GoHeartFill } from "react-icons/go"
 import { StarRating } from "@/components/layout/StarRating"
 import { ProductCategory } from "@/types"
+import { HiMinus, HiPlus } from "react-icons/hi"
 
 type ProductInfoProps = {
   product: {
@@ -29,7 +30,7 @@ type ProductInfoProps = {
   quantity: number
   updateQuantity: (type: "inc" | "dec") => void
   liked: boolean
-  toggleWishlist: () => void
+  toggleWishlist: (color?: string | null) => void
   addToCartHandler: () => void
   isStockLimitReached: boolean
 }
@@ -62,14 +63,13 @@ export default function ProductInfo({
         ) : null}
       </div>
 
-      {/* <div className="border-y py-5 border-lightgray"> */}
         {hasActiveDiscount ? (
           <>
             <p>Offer expires in:</p>
             <div className="flex gap-3 py-6 flex-wrap">
               {Object.entries(timeLeft).map(([label, value]) => (
                 <div key={label} className="flex flex-col items-center">
-                  <span className="bg-gray-100 px-5 py-2 text-3xl font-semibold">
+                  <span className="bg-gray-100 px-3 md:px-5 py-2 text-xl md:text-2xl lg:text-3xl font-semibold">
                     {value.toString().padStart(2, "0")}
                   </span>
                   <span className="text-xs text-gray-400 uppercase">{label}</span>
@@ -80,7 +80,6 @@ export default function ProductInfo({
         ) : (
           ""
         )}
-      {/* </div> */}
 
       <div className="border-b border-lightgray pb-5">
         <p className="text-xl text-gray-200">Measurements</p>
@@ -90,9 +89,9 @@ export default function ProductInfo({
       {product.color && product.color.length > 0 && (
         <div className="flex flex-col gap-3 py-4 border-b border-lightgray">
           <div className="flex flex-col gap-3 pb-3">
-            <p className="text-[16px] font-semibold">Colour</p>
+            <p className="text-[16px] font-semibold">Color</p>
             <p className="text-sm text-gray-400">
-              {selectedColorIndex !== null ? product.color[selectedColorIndex] : "Select a colour"}
+              {selectedColorIndex !== null ? product.color[selectedColorIndex] : "Select a color"}
             </p>
           </div>
           <div className="flex gap-3 flex-wrap">
@@ -102,10 +101,10 @@ export default function ProductInfo({
                 <button
                   key={index}
                   title={hex}
-                  aria-label={`Select colour ${hex}`}
+                  aria-label={`Select color ${hex}`}
                   aria-pressed={isActive}
                   onClick={() => setSelectedColorIndex(isActive ? null : index)}
-                  className="relative w-8 h-8 rounded-full border-2 transition-all duration-150 focus:outline-none"
+                  className="cursor-pointer relative w-8 h-8 rounded-full border-2 transition-all duration-150 focus:outline-none"
                   style={{
                     backgroundColor: hex,
                     borderColor: isActive ? "#171616" : "#d1d5db",
@@ -119,27 +118,30 @@ export default function ProductInfo({
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row items-center gap-6">
-        <div className="bg-gray-100 flex items-center px-10 py-3">
+      <div className="flex items-center gap-3 md:gap-6">
+        <div className="bg-gray-100 flex items-center px-5 md:px-10 py-3">
           <button
             onClick={() => updateQuantity("dec")}
             disabled={quantity <= 1}
-            className={quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""}
+            className={quantity <= 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
           >
-            -
+            <HiMinus />
           </button>
-          <span className="px-6">{quantity}</span>
+          <span className="px-4 text-lg">{quantity}</span>
           <button
             onClick={() => updateQuantity("inc")}
             disabled={typeof product.stock === "number" && quantity >= product.stock}
-            className={typeof product.stock === "number" && quantity >= product.stock ? "opacity-50 cursor-not-allowed" : ""}
+            className={typeof product.stock === "number" && quantity >= product.stock ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
           >
-            +
+            <HiPlus />
           </button>
         </div>
         <button
-          onClick={toggleWishlist}
-          className="border-2 rounded-lg w-full py-3 flex items-center justify-center gap-1"
+          onClick={() => {
+            const selectedColor = selectedColorIndex !== null ? product.color?.[selectedColorIndex] ?? null : null
+            toggleWishlist(selectedColor)
+          }}
+          className="cursor-pointer border-2 rounded-lg w-full py-3 flex items-center justify-center gap-1"
         >
           {liked ? (
             <GoHeartFill className="text-3xl bg-white p-2 md:p-1 rounded-full transition text-red-500" /> 

@@ -6,7 +6,7 @@ import Image from "next/image";
 
 const BannerGrid = () => {
     return (
-        <section className="my-5 mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px]">
+        <section className="my-10 mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px]">
             <div className="flex justify-between flex-col md:flex-row gap-10 font-poppins">
                 <div className="relative">
                     <Image

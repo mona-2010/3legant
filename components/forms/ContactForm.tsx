@@ -52,16 +52,16 @@ const ContactForm = () => {
 
     return (
         <>
-            <h1 className='font-poppins font-medium text-[40px] text-center leading-[44px]'>Contact Us</h1>
+            <h1 className='font-poppins font-medium text-[24px] md:text-[40px] text-center leading-[44px] my-10'>Contact Us</h1>
             <div className="text-center flex flex-col md:flex-row md:justify-between lg:flex-row lg:justify-between my-4 gap-6">
                 {values.map((value, index) => (
-                    <div key={index} className="flex flex-col items-center w-full overflow-hidden max-sm:h-[150px]">
-                        <div className="text-lg flex flex-col items-center justify-center md:text-4xl bg-gray-100 w-[250px] md:w-[390px] h-[200px] px-2 md:px-8 max-sm:px-4 max-sm:py-8">
+                    <div key={index} className="flex flex-col items-center w-full overflow-hidden">
+                        <div className="text-lg flex flex-col items-center justify-center md:text-4xl bg-gray-100 w-[250px] md:w-[390px] h-[100px] md:h-[200px] px-2 md:px-8 max-sm:px-4 py-12">
                             {value.icon}
                             <p className="uppercase max-lg:text-md font-inter text-[20px] py-2 md:py-4 font-[700] text-gray-200 max-md:text-sm max-sm:font-semibold">
                                 {value.title}
                             </p>
-                            <p className="px-2 md:px-10 max-sm:w-50 font-semibold text-[12px] md:text-[12px] lg:text-[16px] text-[#141718]">
+                            <p className="px-2 md:px-10 w-[90%] md:w-full font-semibold text-[12px] md:text-[12px] lg:text-[16px] text-[#141718]">
                                 {value.desc}
                             </p>
                         </div>
@@ -122,7 +122,7 @@ const ContactForm = () => {
                     <button
                         type='submit'
                         disabled={isSubmitting}
-                        className='text-center rounded-[8px] mt-6 py-[10px] px-[40px] bg-[#141718] text-white disabled:opacity-60 disabled:cursor-not-allowed'
+                        className='cursor-pointer text-center rounded-[8px] mt-6 py-[10px] px-[40px] bg-[#141718] text-white disabled:opacity-60 disabled:cursor-not-allowed'
                     >
                         {isSubmitting ? "Sending..." : "Send Message"}
                     </button>

@@ -34,6 +34,7 @@ const WishlistPage = () => {
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useAuth()
   const cartItems = useSelector((state: RootState) => state.cart.items)
+  const colorPreferences = useSelector((state: RootState) => state.wishlist.colorPreferences)
 
   const [items, setItems] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -132,11 +133,12 @@ const WishlistPage = () => {
                 if (!user) { toast.error("Login to add items to cart"); return }
                 if (isStockLimitReached) { toast.error("Stock limit exceeded"); return }
 
+                const selectedColor = colorPreferences[product.id] ?? product.color?.[0] ?? null
                 const added = await addItemToCart({
                   userId: user.id,
                   productId: product.id,
                   quantity: 1,
-                  color: product.color?.[0] ?? null,
+                  color: selectedColor,
                 })
 
                 if (!added) { toast.error("Stock limit exceeded"); return }
@@ -165,19 +167,19 @@ const WishlistPage = () => {
                   <RxCross1 />
                 </button>
 
-                <div className="relative w-16 h-16 flex-shrink-0">
+                <div className="relative w-12 h-16 flex-shrink-0">
                   <TintedProductImage
                     src={product.image}
                     alt={product.title}
                     fill
-                    colorHex={product.color?.[0]}
+                    colorHex={colorPreferences[product.id] ?? product.color?.[0]}
                     className="object-fit"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
                   <p className="font-medium text-sm sm:text-base leading-tight">{product.title}</p>
-                  <p className="text-xs text-gray-400">Color: {product.color?.[0]}</p>
+                  <p className="text-xs text-gray-400">Color: {colorPreferences[product.id] ?? product.color?.[0]}</p>
                   <p className="font-semibold text-sm md:hidden">${product.price}</p>
                 </div>
               </div>
@@ -187,7 +189,7 @@ const WishlistPage = () => {
                 <ActionButton />
               </div>
             </div>
-            <div className="mt-1 md:hidden">
+            <div className="mt-5 md:hidden">
               <ActionButton />
             </div>
           </div>
