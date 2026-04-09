@@ -3,11 +3,11 @@ import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { getUserAddresses } from "@/lib/actions/addresses";
 import { UserAddress, CartItem } from "@/types";
-import { createClient } from "@/lib/supabase/client";
 import { createCheckoutSession } from "@/lib/actions/stripe";
 import { toast } from "react-toastify";
 import PaymentSection from "./PaymentSection";
 import ShippingAddressSection from "./ShippingAddressSection";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export type FormData = {
   firstName: string;
@@ -37,6 +37,7 @@ type Props = {
   isCartEmpty: boolean;
   cartItems: CartItem[];
   appliedCouponId?: string;
+  mobileOrderSummary?: React.ReactNode;
 };
 
 const normalizeLocalPhone = (value?: string): string => {
@@ -53,13 +54,16 @@ const CheckoutForm = ({
   shippingMethod,
   isCartEmpty,
   cartItems,
-  appliedCouponId
+  appliedCouponId,
+  mobileOrderSummary,
 }: Props) => {
+  const { user } = useAuth();
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<FormData>();
 
@@ -69,6 +73,20 @@ const CheckoutForm = ({
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadEmailFromUser = () => {
+      const currentEmail = getValues("email");
+      if (currentEmail) return;
+
+      const emailToSet = user?.email || "";
+      if (emailToSet) {
+        setValue("email", emailToSet, { shouldValidate: true });
+      }
+    };
+
+    loadEmailFromUser();
+  }, [getValues, setValue, user?.email]);
 
   useEffect(() => {
     const loadAddresses = async () => {
@@ -126,9 +144,6 @@ const CheckoutForm = ({
     if (payment === "card") {
       setSubmitting(true);
       try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-
         const { url, error } = await createCheckoutSession({
           items: cartItems,
           userInfo: {
@@ -196,7 +211,7 @@ const CheckoutForm = ({
     <form
       onSubmit={handleSubmit(onSubmit)}
       noValidate
-      className="w-full lg:w-2/3"
+      className="w-full lg:w-2/3 flex flex-col"
     >
       <div className="border border-gray-200 rounded p-5 mb-6">
         <h1 className="font-medium mb-5 text-[20px]">Contact Information</h1>
@@ -285,6 +300,12 @@ const CheckoutForm = ({
               <input {...register("billingZipCode", { required: showBilling ? "Zip required" : false })} className="border border-gray-200 rounded p-2 px-3" />
             </div>
           </div>
+        </div>
+      )}
+
+      {mobileOrderSummary && (
+        <div className="block lg:hidden mb-6">
+          {mobileOrderSummary}
         </div>
       )}
 

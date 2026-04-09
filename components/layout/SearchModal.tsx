@@ -69,8 +69,7 @@ export default function SearchModal({ open, setOpen }: Props) {
       const { data } = await supabase
         .from("products")
         .select("id,title,price,original_price,valid_until,image,color")
-        .ilike("title", `%${trimmed}%`)
-        .limit(6);
+        .ilike("title", `%${trimmed}%`);
 
       if (requestId !== searchRequestSeqRef.current) return;
       lastSearchedQueryRef.current = trimmed;
@@ -109,7 +108,7 @@ export default function SearchModal({ open, setOpen }: Props) {
           placeholder="Enter a product name..."
           className="w-full border-b-2 border-gray-300 focus:border-black-900 outline-none py-3"
         />
-        <div className="mt-4 flex flex-col gap-4">
+        <div className="mt-4 flex flex-col gap-4 overflow-y-auto" style={{ maxHeight: "60vh" }}>
           {results.map((product) => (
             <Link
               key={product.id}
@@ -133,6 +132,9 @@ export default function SearchModal({ open, setOpen }: Props) {
               </div>
             </Link>
           ))}
+          {query.trim() && results.length === 0 && (
+            <p className="text-sm text-gray-500">No matching products found.</p>
+          )}
         </div>
       </div>
       <style jsx global>{`

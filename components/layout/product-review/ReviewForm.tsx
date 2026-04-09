@@ -39,7 +39,7 @@ export default function ReviewForm({
                 <button
                     onClick={onSubmit}
                     disabled={submitting}
-                    className="bg-black text-white rounded-full px-6 py-2 text-sm disabled:opacity-50"
+                    className="cursor-pointer bg-black text-white rounded-full px-6 py-2 text-sm disabled:opacity-50"
                 >
                     {submitting
                         ? editingReviewId
@@ -51,7 +51,7 @@ export default function ReviewForm({
                 </button>
                 <button
                     onClick={onCancel}
-                    className="border border-gray-300 rounded-full px-6 py-2 text-sm"
+                    className="cursor-pointer border border-gray-300 rounded-full px-6 py-2 text-sm"
                 >
                     Cancel
                 </button>

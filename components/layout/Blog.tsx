@@ -26,9 +26,9 @@ const Blog = async ({
         <ButtonText text={"More Articles"} linkTo={"blog"} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {blogs.map((blog, index) => (
-          <div key={index} className="my-6 mx-auto w-full max-w-[380px]">
+          <div key={index} className="my-6 mx-auto w-full max-w-[420px]">
             <SafeImage src={getBlogImageUrl(blog.cover_image_path) || blog.cover_image || blogFallbackImage} fallbackSrc={blogFallbackImage} alt={blog.title} width={900} height={500} className="object-cover w-full h-60 md:h-90" />
             <p className="font-inter text-base text-black mt-4 mb-2 lg:text-xl line-clamp-2">
               {blog.title}

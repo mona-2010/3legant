@@ -201,7 +201,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                                 alt={blog.title}
                                 width={800}
                                 height={500}
-                                className={`object-cover ${(view === "list" || view === "grid1" || view === "grid2") ? "max-w-auto lg:max-w-70 h-60" : "w-full h-60 md:h-90"}`}
+                                className={`object-cover ${(view === "list" || view === "grid1" || view === "grid2") ? "max-w-auto md:max-w-60 min-w-60 h-60" : "w-full h-60 md:h-90"}`}
                             />
                         </Link>
 

@@ -58,6 +58,7 @@ export default function CheckoutPage() {
   const router = useRouter()
 
   const cartItems = useSelector((state: RootState) => state.cart.items)
+  const cartLoaded = useSelector((state: RootState) => state.cart.cartLoaded)
   const shippingMethod = useSelector((state: RootState) => state.cart.shippingMethod)
   const appliedCoupon = useSelector((state: RootState) => state.cart.appliedCoupon)
 
@@ -75,15 +76,6 @@ export default function CheckoutPage() {
     showNotification: true,
     debug: false
   })
-
-  useEffect(() => {
-    if (!appliedCoupon) return
-    const minRequired = appliedCoupon.coupon.min_purchase_amount
-    if (typeof minRequired === "number" && subtotal < minRequired) {
-      dispatch(removeCoupon())
-      toast.warning("Coupon removed: minimum order amount not met")
-    }
-  }, [appliedCoupon, subtotal, dispatch])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -160,6 +152,18 @@ export default function CheckoutPage() {
         router.push("/cart/complete")
       })()
   }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const isPaymentReturn = !!params.get("payment_intent") || !!params.get("redirect_status")
+
+    if (!cartLoaded || isPaymentReturn) return
+
+    if (cartItems.length === 0) {
+      toast.info("Your cart is empty. Add products to continue checkout.")
+      router.replace("/cart?fromCheckoutEmpty=1")
+    }
+  }, [cartItems.length, cartLoaded, router])
 
   const updateQuantity = async (id: string, type: "inc" | "dec") => {
     const item = cartItems.find(i => i.id === id)

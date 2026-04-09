@@ -1,37 +1,43 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { OrderUserInfo } from "@/types"
+import { getAddressSignature } from "./address-utils"
+
+type SaveOrderAddressesOptions = {
+  deletedSignatures?: Set<string>
+}
 
 export async function saveOrderAddresses(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   orderId: string,
-  userInfo: OrderUserInfo
+  userInfo: OrderUserInfo,
+  options?: SaveOrderAddressesOptions
 ) {
   const shipping = userInfo.shipping
   const billing = userInfo.billing
+  const deletedSignatures = options?.deletedSignatures || new Set<string>()
 
   const adminClient = createAdminClient()
 
-  const { data: existingAddr, error: searchError } = await adminClient
+  const { data: shippingAddresses, error: searchError } = await adminClient
     .from("user_addresses")
-    .select("id")
+    .select("id, street_address, city, state, zip_code, country")
     .eq("user_id", userId)
-    .eq("street_address", shipping.street_address)
-    .eq("city", shipping.city)
-    .eq("zip_code", shipping.zip_code || "")
-    .eq("type", "shipping")
-    .maybeSingle()
+  
+  const shippingSignature = getAddressSignature(shipping)
+  const existingAddr = (shippingAddresses || []).find(
+    (address) => getAddressSignature(address) === shippingSignature
+  )
 
   if (searchError) console.error("[AddressSync] Shipping search error:", searchError.message)
 
   let shippingAddressId = existingAddr?.id || null
-  if (!existingAddr) {
+  if (!existingAddr && !deletedSignatures.has(shippingSignature)) {
     const { data: anyAddr } = await adminClient
       .from("user_addresses")
       .select("id")
       .eq("user_id", userId)
-      .eq("type", "shipping")
       .limit(1)
 
     const { data: newShipping, error: insertError } = await adminClient.from("user_addresses").insert({
@@ -57,24 +63,24 @@ export async function saveOrderAddresses(
 
   let billingAddressId = null
   if (billing?.street_address) {
-    const { data: existingBilling, error: billSearchError } = await adminClient
+    const { data: billingAddresses, error: billSearchError } = await adminClient
       .from("user_addresses")
-      .select("id")
+      .select("id, street_address, city, state, zip_code, country")
       .eq("user_id", userId)
-      .eq("street_address", billing.street_address)
-      .eq("city", billing.city)
-      .eq("type", "billing")
-      .maybeSingle()
+
+    const billingSignature = getAddressSignature(billing)
+    const existingBilling = (billingAddresses || []).find(
+      (address) => getAddressSignature(address) === billingSignature
+    )
 
     if (billSearchError) console.error("[AddressSync] Billing search error:", billSearchError.message)
 
     billingAddressId = existingBilling?.id || null
-    if (!existingBilling) {
+    if (!existingBilling && !deletedSignatures.has(billingSignature)) {
       const { data: anyBilling } = await adminClient
         .from("user_addresses")
         .select("id")
         .eq("user_id", userId)
-        .eq("type", "billing")
         .limit(1)
 
       const { data: newBilling, error: billInsertError } = await adminClient.from("user_addresses").insert({

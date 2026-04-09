@@ -5,9 +5,9 @@ import Footer from "@/components/layout/Footer"
 import StepIndicator from "@/components/layout/StepIndicator"
 import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { useDispatch } from "react-redux"
-import { AppDispatch } from "@/store/store"
-import { setCart, clearCart } from "@/store/cartSlice"
+import { useDispatch, useSelector } from "react-redux"
+import { AppDispatch, RootState } from "@/store/store"
+import { setCart, clearCart, setCartLoaded } from "@/store/cartSlice"
 import { fetchCart } from "@/lib/cart/fetchCart"
 import { toast } from "react-toastify"
 import { useAuth } from "@/components/providers/AuthProvider"
@@ -17,6 +17,7 @@ export default function CartLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter()
   const pathname = usePathname()
   const { user, loading } = useAuth()
+  const cartLoaded = useSelector((state: RootState) => state.cart.cartLoaded)
 
   const activeStep = pathname === "/cart/complete" ? 3 : pathname === "/cart/checkout" ? 2 : 1
   const pageHeading = pathname === "/cart/complete" ? "Complete" : pathname === "/cart/checkout" ? "Checkout" : "Cart"
@@ -36,8 +37,10 @@ export default function CartLayout({ children }: { children: React.ReactNode }) 
     if (!userId) return
 
     const loadCart = async () => {
+      dispatch(setCartLoaded(false))
       const items = await fetchCart(userId)
       dispatch(setCart(items))
+      dispatch(setCartLoaded(true))
     }
 
     void loadCart()
@@ -45,6 +48,10 @@ export default function CartLayout({ children }: { children: React.ReactNode }) 
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen"><p>Loading...</p></div>
+  }
+
+  if (user && pathname.startsWith("/cart") && !cartLoaded) {
+    return <div className="flex justify-center items-center min-h-screen"><p>Loading cart...</p></div>
   }
 
   if (!user) return null

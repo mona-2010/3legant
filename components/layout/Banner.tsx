@@ -17,7 +17,7 @@ const Banner = () => {
                             SALE UP TO 35% OFF
                         </p>
                         <h5 className="my-4 font-[550] text-3xl lg:text-5xl max-w-full md:max-w-[60%]">HUNDREDS of New lower prices!</h5>
-                        <p className="font-inter text-chinese-black text-base font-normal mb-6 lg:text-[20px] max-w-[90%] md:max-w-[60%]">
+                        <p className="font-inter text-chinese-black text-base font-normal mb-6 lg:text-[20px] max-w-[90%] md:max-w-[70%]">
                             It’s more affordable than ever to give every room in your home a
                             stylish makeover
                         </p>

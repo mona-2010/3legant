@@ -53,7 +53,7 @@ export default function ReviewEntry({
                     }
                     onShowForm()
                 }}
-                className="capitalize mr-2 md:mr-4 bg-black text-white md:w-[176px] rounded-full p-3 md:px-5 p md:py-2 flex items-center justify-center"
+                className="cursor-pointer capitalize mr-2 md:mr-4 bg-black text-white md:w-[176px] rounded-full p-3 md:px-5 p md:py-2 flex items-center justify-center"
             >
                 <span className="block md:hidden">
                     <FaArrowRight size={12}/>

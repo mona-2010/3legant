@@ -23,6 +23,7 @@ type CartState = {
   appliedCoupon: AppliedCoupon | null
   lastOrder: Order | null
   lastOrderItems: OrderItem[]
+  cartLoaded: boolean
 }
 
 const initialState: CartState = {
@@ -30,7 +31,8 @@ const initialState: CartState = {
   shippingMethod: "free",
   appliedCoupon: null,
   lastOrder: null,
-  lastOrderItems: []
+  lastOrderItems: [],
+  cartLoaded: false
 }
 
 const cartSlice = createSlice({
@@ -40,6 +42,10 @@ const cartSlice = createSlice({
 
     setCart: (state, action: PayloadAction<CartItem[]>) => {
       state.items = action.payload
+    },
+
+    setCartLoaded: (state, action: PayloadAction<boolean>) => {
+      state.cartLoaded = action.payload
     },
 
     addToCart: (state, action: PayloadAction<CartItem>) => {
@@ -120,6 +126,7 @@ const cartSlice = createSlice({
 
 export const {
   setCart,
+  setCartLoaded,
   addToCart,
   upsertCartItem,
   increaseQty,

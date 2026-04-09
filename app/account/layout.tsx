@@ -49,7 +49,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
             backHref={currentPage === "Account" ? "/" : "/account"}
           />
         </div>
-        <h1 className="text-center font-poppins text-[30px] md:text-[36px] lg:text-[54px] font-[500] my-[40px]">My Account</h1>
+        <h1 className="text-center font-poppins text-[30px] md:text-[36px] lg:text-[54px] font-[500] my-[20px] md:my-[40px]">My Account</h1>
         <AccountSidebar user={user} onLogout={() => setIsSignOutModalOpen(true)}>
           {children}
         </AccountSidebar>

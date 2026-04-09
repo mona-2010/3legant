@@ -47,7 +47,7 @@ const Newsletter = () => {
           </div>
 
           <Link href="/sign-up" className="ml-4 whitespace-nowrap">
-            Signup
+            Subscribe
           </Link>
         </div>
 

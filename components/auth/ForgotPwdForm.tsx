@@ -35,8 +35,8 @@ const ForgotPwdForm = () => {
     }
 
     return (
-        <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-5 md:ml-10 lg:ml-25 text-gray-200">
-            <h1 className="font-poppins text-[40px] mb-15  font-[500] text-[#141718] leading-10">
+        <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-5 md:my-0 md:mt-0 mx-auto md:mx-10 lg:mx-25 text-gray-200">
+            <h1 className="font-poppins text-[25px] md:text-[40px] mb-5 md:mb-10 font-[500] text-[#141718] leading-10">
                 Forgot Password?
             </h1>
 

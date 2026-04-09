@@ -14,7 +14,7 @@ export default function ReviewHeader({ totalReviews, sortBy, onSortByChange }: R
             <select
                 value={sortBy}
                 onChange={(e) => onSortByChange(e.target.value)}
-                className="border border-lightgray px-2 py-2 rounded-md text-sm"
+                className="cursor-pointer border border-lightgray px-2 py-2 rounded-md text-sm"
             >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>

@@ -18,11 +18,11 @@ const ImageSlider = () => {
 
   return (
     <section className="mx-[32px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] mb-10 relative">
-      <button className="hidden custom-prev w-8 h-8 md:w-14 md:h-14 md:flex justify-center items-center rounded-full absolute z-40 top-1/2 -translate-y-1/2 bg-white left-10">
+      <button className="hidden cursor-pointer custom-prev w-8 h-8 md:w-14 md:h-14 md:flex justify-center items-center rounded-full absolute z-40 top-1/2 -translate-y-1/2 bg-white left-10">
         <ArrowLeft />
       </button>
 
-      <button className="hidden custom-next w-8 h-8 md:w-14 md:h-14 md:flex justify-center items-center rounded-full absolute z-40 top-1/2 -translate-y-1/2 bg-white right-10">
+      <button className="hidden cursor-pointer custom-next w-8 h-8 md:w-14 md:h-14 md:flex justify-center items-center rounded-full absolute z-40 top-1/2 -translate-y-1/2 bg-white right-10">
         <ArrowRight />
       </button>
 

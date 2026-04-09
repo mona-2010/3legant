@@ -15,7 +15,7 @@ const BannerGrid = () => {
                         width={648}
                         height={600}
                     />
-                    <div className="absolute top-15 left-10">
+                    <div className="absolute top-5 left-10">
                         <ButtonText heading={'Living Room'} linkTo={'shop?category=Living%20Room'} text={'Shop Now'} />
                     </div>
                 </div>

@@ -13,6 +13,8 @@ import { usePaginatedProducts } from "@/lib/hooks/useProducts"
 import ShopPageSkeleton from "../common/ShopPageSkeleton"
 import { isProductCategory } from "@/types"
 
+const ALL_PRICE_SELECTION = ["all", ...prices.filter((price) => price !== "all")]
+
 const normalizeCategoryParam = (value: string | null): CategoryFilter => {
   if (!value) return "all"
 
@@ -30,7 +32,7 @@ const ShopPage = () => {
   const [grid, setGrid] = useState("3")
   const [sort, setSort] = useState("default")
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>(normalizeCategoryParam(categoryParam))
-  const [selectedPrices, setSelectedPrices] = useState<string[]>(["all"])
+  const [selectedPrices, setSelectedPrices] = useState<string[]>(ALL_PRICE_SELECTION)
   const shouldFetchProducts = selectedPrices.length > 0
   const { products, loading, loadingMore, hasMore, fetchMore } = usePaginatedProducts({
     category: selectedCategory,
@@ -114,7 +116,10 @@ const ShopPage = () => {
 
                 <select
                   value={selectedPrices[0] || "all"}
-                  onChange={(e) => setSelectedPrices([e.target.value])}
+                  onChange={(e) => {
+                    const selectedValue = e.target.value
+                    setSelectedPrices(selectedValue === "all" ? ALL_PRICE_SELECTION : [selectedValue])
+                  }}
                   className="cursor-pointer border px-2 py-2 rounded-md w-full md:w-[260px] lg:w-[262px]"
                 >
                   {prices.map((price) => (

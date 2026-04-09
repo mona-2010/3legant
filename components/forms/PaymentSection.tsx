@@ -62,7 +62,7 @@ export default function PaymentSection({ payment, register, errors, submitting, 
       <button
         type="submit"
         disabled={submitting || isCartEmpty}
-        className="cursor-pointer bg-black text-white py-4 mt-6 w-full rounded-lg disabled:opacity-60 disabled:cursor-not-allowed font-medium text-lg transition-all hover:bg-gray-900"
+        className="cursor-pointer bg-black text-white py-3 mt-6 w-full rounded-lg disabled:opacity-60 disabled:cursor-not-allowed font-medium text-lg transition-all hover:bg-gray-900"
       >
         {isCartEmpty
           ? "Cart is empty"

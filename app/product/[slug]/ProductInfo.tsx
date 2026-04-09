@@ -35,11 +35,12 @@ type ProductInfoProps = {
   addToCartHandler: () => void
   isAddingToCart: boolean
   isStockLimitReached: boolean
+  isSelectedVariantInCart: boolean
 }
 
 export default function ProductInfo({
   product, timeLeft, selectedColorIndex, setSelectedColorIndex,
-  quantity, updateQuantity, liked, toggleWishlist, addToCartHandler, isAddingToCart, isStockLimitReached,
+  quantity, updateQuantity, liked, toggleWishlist, addToCartHandler, isAddingToCart, isStockLimitReached, isSelectedVariantInCart,
 }: ProductInfoProps) {
   const isDiscountActive = hasActiveDiscount(product)
   const effectivePrice = getEffectiveProductPrice(product)
@@ -164,7 +165,7 @@ export default function ProductInfo({
           disabled={isAddingToCart}
           className="w-full rounded-lg bg-black text-white text-center py-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {isAddingToCart ? "Adding..." : "Add to cart"}
+          {isAddingToCart ? "Saving..." : isSelectedVariantInCart ? "Add to cart" : "Add to cart"}
         </button>
       )}
 

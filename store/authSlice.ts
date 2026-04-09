@@ -14,9 +14,9 @@ const initialState: AuthState = {
   status: 'loading',
 }
 
-// getUser() is ALWAYS server-verified — it hits the Supabase API and
-// automatically refreshes an expired access token using the refresh token.
-// Unlike getSession() which just reads (possibly stale) localStorage.
+// Use session-first bootstrap to avoid an extra /auth/v1/user network request
+// on every initial page load. Token refresh/user revalidation still happens
+// through auth state changes and visibility-triggered refresh logic.
 export const initAuth = createAsyncThunk<
   { user: User | null; role: 'admin' | 'user' | null },
   void,
@@ -27,7 +27,8 @@ export const initAuth = createAsyncThunk<
     const { createClient } = await import('@/lib/supabase/client')
     const supabase = createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user ?? null
     if (!user) return { user: null, role: null }
 
     const { data: profile } = await supabase

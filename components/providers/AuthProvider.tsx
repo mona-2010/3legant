@@ -40,9 +40,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const loading = useSelector(selectIsAuthLoading)
 
   useEffect(() => {
-    // 1. Initial server-verified auth check.
-    //    initAuth calls getUser() which hits the Supabase API and refreshes
-    //    any expired access token automatically using the refresh token.
+    // 1. Initial auth bootstrap.
+    //    initAuth reads session first to avoid an extra user fetch request.
     dispatch(initAuth())
 
     // 2. React to future auth events (login, logout, token refresh).
@@ -63,8 +62,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     )
 
     // 3. When the user returns to this tab, browsers may have throttled the
-    //    Supabase auto-refresh timer. Dispatch initAuth() which calls getUser()
-    //    and forces a server-side token refresh if the access token has expired.
+    //    Supabase auto-refresh timer. Dispatch initAuth() to rehydrate auth state.
     const handleVisibilityChange = () => {
       // Background refresh: Only if visible AND not already checking.
       if (document.visibilityState === 'visible' && !loading) {

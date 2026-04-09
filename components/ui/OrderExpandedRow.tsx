@@ -180,7 +180,7 @@ export default function OrderExpandedRow({
             <button
               onClick={onCancelOrder}
               disabled={cancelling}
-              className="rounded bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-60 hover:bg-red-700 transition"
+              className="cursor-pointer rounded bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-60 hover:bg-red-700 transition"
             >
               {cancelling ? "Cancelling..." : "Cancel Order"}
             </button>

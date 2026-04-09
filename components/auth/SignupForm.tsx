@@ -26,6 +26,11 @@ const mapSignUpErrorMessage = (message: string) => {
   return message
 }
 
+const isAlreadySignedUpError = (message: string) => {
+  const normalized = message.toLowerCase()
+  return normalized.includes("already") || normalized.includes("registered") || normalized.includes("exists")
+}
+
 const SignupForm = () => {
   const supabase = createClient()
   const router = useRouter()
@@ -44,7 +49,7 @@ const SignupForm = () => {
 
     const emailRedirectTo = `${window.location.origin}/sign-in`
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -59,6 +64,17 @@ const SignupForm = () => {
       },
     })
 
+    const hasObfuscatedExistingUserResponse =
+      !error &&
+      !!signUpData?.user &&
+      Array.isArray(signUpData.user.identities) &&
+      signUpData.user.identities.length === 0
+
+    if ((error && isAlreadySignedUpError(error.message)) || hasObfuscatedExistingUserResponse) {
+      toast.error("User has already signed up.")
+      return
+    }
+
     if (error) {
       setServerError(mapSignUpErrorMessage(error.message))
       return
@@ -70,14 +86,14 @@ const SignupForm = () => {
   }
 
   return (
-    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-5 md:ml-10 lg:ml-25 text-gray-200">
-      <h1 className="font-poppins text-[40px] font-[500] text-[#141718] leading-10">
+    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-5 md:my-0 md:mt-0 mx-auto md:mx-10 lg:mx-25 text-gray-200">
+      <h1 className="font-poppins text-[25px] md:text-[40px] font-[500] text-[#141718] leading-10">
         Sign up
       </h1>
 
       <p>
         Already have an account?{" "}
-        <Link href="/sign-in" className="text-[#38CB89] leading-15">
+        <Link href="/sign-in" className="text-[#38CB89] md:leading-15">
           Sign in
         </Link>
       </p>

@@ -36,13 +36,13 @@ const ResetForm = () => {
   }
 
   return (
-    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-5 md:ml-10 lg:ml-25 text-gray-200">
-      <h1 className="mb-10 font-poppins text-[40px] font-[500] text-[#141718] leading-10">
+    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-10 md:my-0 md:mt-0 mx-auto md:mx-10 lg:mx-25 text-gray-200">
+      <h1 className="mb-5 font-poppins text-[25px] md:text-[40px] font-[500] text-[#141718] leading-10">
         Reset Password
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="w-full mr-auto">
-        <div className="flex justify-between items-center mt-4 border-b border-lightgray">
+        <div className="flex justify-between items-center md:mt-4 border-b border-lightgray">
           <input
             type={showPassword ? "text" : "password"}
             className="custom-input w-full mb-1 focus:outline-none"
@@ -83,7 +83,7 @@ const ResetForm = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="cursor-pointer w-50 text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
+          className="cursor-pointer w-full md:w-50 text-center rounded-[8px] mt-6 py-[10px] bg-[#141718] text-white"
         >
           {isSubmitting ? "Changing Password...." : "Set"}
         </button>

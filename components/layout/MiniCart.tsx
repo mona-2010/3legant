@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { RxCross2 } from "react-icons/rx"
 import { useDispatch, useSelector } from "react-redux"
 import { RootState, AppDispatch } from "@/store/store"
@@ -12,6 +13,7 @@ import {
 import { removeCartItem, updateCartItemQuantity } from "@/lib/cart/mutations"
 import TintedProductImage from "./TintedProductImage"
 import { HiMinus, HiPlus } from "react-icons/hi"
+import { toast } from "react-toastify"
 
 interface Props {
   cartOpen: boolean
@@ -20,6 +22,7 @@ interface Props {
 
 export default function CartPopup({ cartOpen, setCartOpen }: Props) {
   const dispatch = useDispatch<AppDispatch>()
+  const router = useRouter()
 
   const cartItems = useSelector((state: RootState) => state.cart.items)
   const shippingMethod = useSelector((state: RootState) => state.cart.shippingMethod)
@@ -68,6 +71,16 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
 
   const total = subtotal + shippingCost
 
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      toast.info("Please add items to checkout.")
+      return
+    }
+
+    setCartOpen(false)
+    router.push("/cart/checkout")
+  }
+
   return (
     <>
       {cartOpen && (
@@ -78,7 +91,7 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-[90%] max-w-[400px] bg-white z-[100]
+        className={`fixed top-0 right-0 h-full w-[100%] max-w-[400px] bg-white z-[100]
         shadow-[-5px_0_15px_rgba(0,0,0,0.05)] transform transition-transform duration-300 flex flex-col
         ${cartOpen ? "translate-x-0" : "translate-x-full"}`}
       >
@@ -181,13 +194,17 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
             <span>${total.toFixed(2)}</span>
           </div>
 
-          <Link
-            href="/cart/checkout"
-            className="block w-full text-center bg-black text-white py-3 rounded-lg font-medium"
-            onClick={() => setCartOpen(false)}
+          <button
+            type="button"
+            className={`block w-full text-center py-3 rounded-lg font-medium ${
+              cartItems.length === 0
+                ? "bg-black/70 text-white cursor-not-allowed"
+                : "bg-black text-white cursor-pointer"
+            }`}
+            onClick={handleCheckout}
           >
-            Checkout
-          </Link>
+            {cartItems.length === 0 ? "Cart is empty" : "Checkout"}
+          </button>
 
           <div className="mt-4 text-center">
             <Link

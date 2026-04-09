@@ -109,7 +109,6 @@ export async function deleteCoupon(id: string) {
 export async function getSuggestedCoupons(orderTotal: number) {
   const supabase = createClient(cookies())
   const nowIso = new Date().toISOString()
-  const NEARBY_THRESHOLD = 10
 
   const [{ data: noExpiry, error: noExpiryError }, { data: unexpired, error: unexpiredError }] = await Promise.all([
     supabase
@@ -141,11 +140,6 @@ export async function getSuggestedCoupons(orderTotal: number) {
       const amountNeeded = Math.max(0, minRequired - orderTotal)
       const isEligible = amountNeeded === 0
 
-      // Show suggestions only when already eligible or close to min amount.
-      if (!isEligible && amountNeeded > NEARBY_THRESHOLD) {
-        return null
-      }
-
       const discountBase = isEligible ? orderTotal : minRequired
       const estimatedDiscount = calculateDiscountAmount(coupon, discountBase)
 
@@ -156,14 +150,12 @@ export async function getSuggestedCoupons(orderTotal: number) {
         isEligible,
       } satisfies SuggestedCoupon
     })
-    .filter((item): item is SuggestedCoupon => Boolean(item))
     .sort((a, b) => {
       if (a.isEligible !== b.isEligible) return a.isEligible ? -1 : 1
       if (a.amountNeeded !== b.amountNeeded) return a.amountNeeded - b.amountNeeded
       if (a.estimatedDiscount !== b.estimatedDiscount) return b.estimatedDiscount - a.estimatedDiscount
       return a.coupon.code.localeCompare(b.coupon.code)
     })
-    .slice(0, 8)
 
   return { data: suggestions, error: null }
 }

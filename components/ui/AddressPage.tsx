@@ -51,7 +51,7 @@ const AddressPage = () => {
             state: "",
             zip_code: "",
             country: "",
-            is_default: addresses.filter(a => a.type === type).length === 0,
+            is_default: addresses.length === 0,
         })
         setIsModalOpen(true)
     }
@@ -61,12 +61,21 @@ const AddressPage = () => {
         setSaving(true)
 
         if (editingAddress.id) {
-            const { data } = await updateAddress(editingAddress.id, editingAddress)
+            const { data, error } = await updateAddress(editingAddress.id, editingAddress)
+            if (error) {
+                setSaving(false)
+                toast.error(error)
+                return
+            }
             if (data) {
-                setAddresses(prev => prev.map(a => a.id === data.id ? data : a))
+                setAddresses(prev => prev.map(a => {
+                    if (a.id === data.id) return data
+                    if (data.is_default) return { ...a, is_default: false }
+                    return a
+                }))
             }
         } else {
-            const { data } = await createAddress({
+            const { data, error } = await createAddress({
                 type: editingAddress.type || "billing",
                 first_name: editingAddress.first_name || "",
                 last_name: editingAddress.last_name || "",
@@ -78,7 +87,17 @@ const AddressPage = () => {
                 country: editingAddress.country || "",
                 is_default: editingAddress.is_default || false,
             })
-            if (data) setAddresses(prev => [...prev, data])
+            if (error) {
+                setSaving(false)
+                toast.error(error)
+                return
+            }
+            if (data) {
+                setAddresses(prev => {
+                    const next = data.is_default ? prev.map(a => ({ ...a, is_default: false })) : prev
+                    return [...next, data]
+                })
+            }
         }
 
         setSaving(false)
@@ -96,20 +115,40 @@ const AddressPage = () => {
             return
         }
 
-        setAddresses(prev => prev.filter(a => a.id !== id))
+        setAddresses(prev => {
+            const next = prev.filter(a => a.id !== id)
+            if (next.length === 0) return next
+            if (next.some(a => a.is_default)) return next
+            return next.map((a, idx) => idx === 0 ? { ...a, is_default: true } : a)
+        })
         toast.success("Address deleted")
         setDeleteTarget(null)
+    }
+
+    const handleSetDefault = async (id: string) => {
+        const target = addresses.find(a => a.id === id)
+        if (!target || target.is_default) return
+
+        const { data, error } = await updateAddress(id, { is_default: true })
+        if (error) {
+            toast.error(error)
+            return
+        }
+
+        if (data) {
+            setAddresses(prev => prev.map(a => ({ ...a, is_default: a.id === data.id })))
+        }
     }
 
     if (loading) return <AddressSkeleton />
 
     return (
-        <div className="flex flex-col py-4 w-full">
+        <div className="flex flex-col w-full">
             <div className="flex items-center justify-between pb-5 gap-5 md:gap-10">
                 <h2 className="text-[20px] font-[600]">Address</h2>
                 <button
                     onClick={() => handleAdd("shipping")}
-                    className="flex items-center gap-1 text-sm bg-black text-white px-3 py-1.5 rounded"
+                    className="cursor-pointer flex items-center gap-1 text-sm bg-black text-white px-3 py-1.5 rounded"
                 >
                     <FiPlus size={14} /> Add Address
                 </button>
@@ -140,13 +179,20 @@ const AddressPage = () => {
                             </div>
                         </div>
                         <div className="flex flex-col text-[14px] leading-[22px]">
+                            <label className="cursor-pointer inline-flex items-center gap-2 text-sm text-gray-700 mb-2">
+                                <input
+                                    type="radio"
+                                    name="default-address"
+                                    className="cursor-pointer"
+                                    checked={item.is_default}
+                                    onChange={() => handleSetDefault(item.id)}
+                                />
+                                {item.is_default ? "Default Address" : "Set as default"}
+                            </label>
                             <p>{item.first_name} {item.last_name}</p>
                             <p>{item.phone}</p>
                             <p>{item.street_address}, {item.city}, {item.state} {item.zip_code}</p>
                             <p>{item.country}</p>
-                            {item.is_default && (
-                                <span className="text-xs text-green-600 mt-1">Default</span>
-                            )}
                         </div>
                     </div>
                 ))}
@@ -163,7 +209,7 @@ const AddressPage = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                                 <select
-                                    className="w-full border p-2 rounded-md text-sm outline-none"
+                                    className="cursor-pointer w-full border p-2 rounded-md text-sm outline-none"
                                     value={editingAddress.type || "billing"}
                                     onChange={(e) => setEditingAddress({ ...editingAddress, type: e.target.value as "billing" | "shipping" })}
                                 >
@@ -245,28 +291,19 @@ const AddressPage = () => {
                                     />
                                 </div>
                             </div>
-
-                            <label className="flex items-center gap-2 text-sm">
-                                <input
-                                    type="checkbox"
-                                    checked={editingAddress.is_default || false}
-                                    onChange={(e) => setEditingAddress({ ...editingAddress, is_default: e.target.checked })}
-                                />
-                                Set as default
-                            </label>
                         </div>
 
                         <div className="flex justify-end gap-3 mt-6">
                             <button
                                 onClick={() => { setIsModalOpen(false); setEditingAddress(null) }}
-                                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-800 rounded-md"
+                                className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-800 rounded-md"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
-                                className="px-4 py-2 text-sm font-medium bg-black text-white rounded-md disabled:opacity-50"
+                                className="cursor-pointer px-4 py-2 text-sm font-medium bg-black text-white rounded-md disabled:opacity-50"
                             >
                                 {saving ? "Saving..." : "Save Changes"}
                             </button>

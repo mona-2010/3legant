@@ -200,7 +200,9 @@ export function usePaginatedProducts({
       if (category !== "all") {
         query = query.contains("category", [category]);
       }
-      query = query.order("created_at", { ascending: false });
+
+      const validRanges = selectedPrices.filter((range) => VALID_PRICE_RANGES.has(range));
+      const shouldApplyPriceFilters = validRanges.length > 0 && !selectedPrices.includes("all");
 
       const { data, error } = await query;
 
@@ -209,8 +211,6 @@ export function usePaginatedProducts({
       }
 
       const normalized = (data || []).map(normalizeProduct);
-      const validRanges = selectedPrices.filter((range) => VALID_PRICE_RANGES.has(range));
-      const shouldApplyPriceFilters = validRanges.length > 0 && !selectedPrices.includes("all");
 
       const filteredProducts = shouldApplyPriceFilters
         ? normalized.filter((product: ProductType) => validRanges.some((range) => isPriceInRange(product.price, range)))

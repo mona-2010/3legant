@@ -85,20 +85,10 @@ export default function ProductCard({ product }: Props) {
     }
 
     if (liked) {
-      const result = await dispatch(removeFromWishlist({ userId, productId: id }))
-      if (removeFromWishlist.fulfilled.match(result)) {
-        toast.info("Removed from wishlist")
-      } else {
-        toast.error((result.payload as string) || "Could not remove from wishlist")
-      }
+      await dispatch(removeFromWishlist({ userId, productId: id }))
 
     } else {
-      const result = await dispatch(addToWishlist({ userId, productId: id }))
-      if (addToWishlist.fulfilled.match(result)) {
-        toast.success("Added to wishlist")
-      } else {
-        toast.error((result.payload as string) || "Could not add to wishlist")
-      }
+      await dispatch(addToWishlist({ userId, productId: id }))
     }
   }
 

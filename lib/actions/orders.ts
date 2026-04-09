@@ -381,7 +381,7 @@ export async function finalizeStripeOrder(sessionId: string) {
       console.log(`[Sync] Checking database for Order ID: ${orderIdFromMetadata}`)
       const { data: existingOrder } = await supabase
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*), payments(*)")
         .eq("id", orderIdFromMetadata)
         .maybeSingle()
       
@@ -406,35 +406,32 @@ export async function finalizeStripeOrder(sessionId: string) {
             if (!updateError) {
               order.status = "processing"
               order.payment_intent_id = piId
-
-              console.log(`[Sync] Updating payment record for Order ${order.id}...`)
-              await supabase
-                .from("payments")
-                .update({ 
-                  status: "succeeded", 
-                  stripe_payment_intent_id: piId,
-                  processed_at: new Date().toISOString() 
-                })
-                .eq("order_id", order.id)
-                .eq("status", "pending")
             }
           }
 
-          // FINAL SAFETY: Always try to clear the cart if the order is successfully paid,
-          // even if the status was already changed by the webhook.
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user && (order.status === "processing" || order.status === "completed" || order.status === "shipped")) {
-            console.log(`[Sync] Final Cart Clear trigger for user ${user.id} (Order: ${order.id}, Status: ${order.status})`)
-            await clearCartByUserId(supabase, user.id)
-          }
+          // Use Admin client for the payment update to bypass RLS
+          const { createAdminClient } = await import("@/lib/supabase/admin")
+          const adminSupabase = createAdminClient()
+          
+          console.log(`[Sync] Ensuring payment record is updated for Order ${order.id}...`)
+          await adminSupabase
+            .from("payments")
+            .update({ 
+              status: "succeeded", 
+              stripe_payment_intent_id: piId,
+              processed_at: new Date().toISOString() 
+            })
+            .eq("order_id", order.id)
+            .eq("status", "pending")
         }
       }
     }
 
     if (!order && piId) {
+      console.log(`[Sync] Order ID not found in metadata. Attempting lookup by Payment Intent ID: ${piId}`)
       const { data: existingByPi } = await supabase
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*), payments(*)")
         .eq("payment_intent_id", piId)
         .maybeSingle()
       
@@ -442,13 +439,67 @@ export async function finalizeStripeOrder(sessionId: string) {
     }
 
     if (order) {
+      // FINAL SAFETY: Always try to clear the cart if the order is successfully paid,
+      // even if the status was already changed by the webhook.
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user && (order.status === "processing" || order.status === "completed" || order.status === "shipped")) {
+        console.log(`[Sync] Final Cart Clear trigger for user ${user.id} (Order: ${order.id}, Status: ${order.status})`)
+        
+        // Use Admin client for cart clear to ensure success
+        const { createAdminClient } = await import("@/lib/supabase/admin")
+        const adminSupabase = createAdminClient()
+        await clearCartByUserId(adminSupabase, user.id)
+      }
+
       return { data: order }
     }
 
     if (!metadata) return { error: "Missing metadata" }
 
-    const userInfo = JSON.parse(metadata.userInfo)
-    const items = JSON.parse(metadata.items)
+    // 4. LAST RESORT: Reconstruct from Stripe if metadata is missing or too bulky
+    let userInfo = null
+    let items: any[] = []
+
+    if (!userInfo) {
+      console.log("[Sync] Reconstructing customer info from Stripe Session...")
+      const name = session.customer_details?.name || ""
+      const [firstName, ...lastNameParts] = name.split(" ")
+      userInfo = {
+        first_name: firstName,
+        last_name: lastNameParts.join(" ") || ".",
+        email: session.customer_details?.email || "",
+        phone: session.customer_details?.phone || "",
+        shipping: {
+          first_name: firstName,
+          last_name: lastNameParts.join(" ") || ".",
+          street_address: session.customer_details?.address?.line1 || "",
+          city: session.customer_details?.address?.city || "",
+          state: session.customer_details?.address?.state || "",
+          zip_code: session.customer_details?.address?.postal_code || "",
+          country: session.customer_details?.address?.country || ""
+        }
+      }
+    }
+
+    if (items.length === 0) {
+      console.log("[Sync] Fetching line items from Stripe API...")
+      const lineItems = await stripe.checkout.sessions.listLineItems(sessionId, {
+        expand: ["data.price.product"]
+      })
+      items = lineItems.data.map((li: any) => {
+        const product = li.price?.product
+        return {
+          id: product?.metadata?.product_id || li.description,
+          quantity: li.quantity || 1,
+          price: (li.price?.unit_amount || 0) / 100,
+          name: li.description || "Product",
+          image: product?.images?.[0] || "",
+          color: product?.metadata?.color || ""
+        }
+      })
+    }
+
+    if (!userInfo || items.length === 0) return { error: "Could not reconstruct order from Stripe data" }
 
     const orderResult = await createOrder({
       user_info: userInfo,
@@ -465,9 +516,9 @@ export async function finalizeStripeOrder(sessionId: string) {
         product_id: i.id,
         quantity: i.quantity,
         product_price: i.price,
-        product_title: i.name,
-        product_image: i.image,
-        product_color: i.color,
+        product_title: i.name || undefined,
+        product_image: i.image || undefined,
+        product_color: i.color || undefined,
       })),
     })
 
@@ -475,7 +526,7 @@ export async function finalizeStripeOrder(sessionId: string) {
 
     const { data: newOrder } = await supabase
       .from("orders")
-      .select("*, order_items(*)")
+      .select("*, order_items(*), payments(*)")
       .eq("id", orderResult.data!.id)
       .single()
 

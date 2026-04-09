@@ -8,6 +8,7 @@ import { applyCoupon, removeCoupon } from "@/store/cartSlice"
 import { validateCoupon } from "@/lib/actions/coupons"
 import { useCouponUpdates, type SuggestedCouponType } from "@/lib/hooks"
 import { calculateDiscountAmount } from "@/lib/coupons"
+import { BiSolidOffer } from "react-icons/bi"
 
 type SuggestedCoupon = {
   coupon: {
@@ -21,7 +22,12 @@ type SuggestedCoupon = {
   isEligible: boolean
 }
 
-export default function CouponInput({ subtotal }: { subtotal: number }) {
+type CouponInputProps = {
+  subtotal: number
+  showNotification?: boolean
+}
+
+export default function CouponInput({ subtotal, showNotification = true }: CouponInputProps) {
   const dispatch = useDispatch<AppDispatch>()
   const appliedCoupon = useSelector((state: RootState) => state.cart.appliedCoupon)
   const [code, setCode] = useState("")
@@ -40,7 +46,7 @@ export default function CouponInput({ subtotal }: { subtotal: number }) {
   const couponMonitor = useCouponUpdates({
     enabled: !appliedCoupon && subtotal > 0,
     subtotal,
-    showNotification: true,
+    showNotification,
     debug: false,
     onNewCoupons: handleNewCoupons,
     onCouponStatusChange: handleCouponStatusChange,
@@ -102,8 +108,6 @@ export default function CouponInput({ subtotal }: { subtotal: number }) {
           {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
 
           <div className="mt-3 space-y-2">
-            <p className="text-xs text-gray-500">Available coupons (eligible or within $10 of min order)</p>
-
             {displaySuggestions.length === 0 && (
               <p className="text-xs text-gray-500">No active coupons available</p>
             )}
@@ -113,10 +117,13 @@ export default function CouponInput({ subtotal }: { subtotal: number }) {
                 {displaySuggestions.map((suggestion) => (
                   <div
                     key={suggestion.coupon.id}
-                    className="flex items-center justify-between gap-3 border border-gray-200 rounded px-3 py-2"
+                    className="flex items-center justify-between gap-3 border border-dashed border-gray-200 rounded px-3 py-2"
                   >
                     <div>
-                      <p className="text-sm font-medium">{suggestion.coupon.code}</p>
+                      <div className="flex items-center gap-1">
+                        <BiSolidOffer />
+                        <p className="text-sm font-medium">{suggestion.coupon.code}</p>
+                      </div>
                       <p className="text-xs text-gray-500">
                         Save up to ${suggestion.estimatedDiscount.toFixed(2)}
                         {suggestion.isEligible ? " - Ready" : ` - Add $${suggestion.amountNeeded.toFixed(2)} more`}

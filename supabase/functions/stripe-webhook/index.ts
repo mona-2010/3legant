@@ -279,15 +279,16 @@ async function handleCheckoutSessionCompleted(session: any) {
 
 async function createPaymentRecord(orderId: string, metadata: any, piId: string) {
   console.log(`[Webhook] Creating payment record for Order ${orderId}...`)
-  const { error: paymentError } = await supabase.from("payments").upsert({
-    order_id: orderId,
-    user_id: metadata.userId || "guest",
-    amount: parseFloat(metadata.total),
-    payment_method: "card",
-    status: "succeeded",
-    stripe_payment_intent_id: piId,
-    processed_at: new Date().toISOString(),
-  }, { onConflict: "order_id" })
+  const { error: paymentError } = await supabase
+    .from("payments")
+    .update({
+      status: "succeeded",
+      stripe_payment_intent_id: piId,
+      processed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("order_id", orderId)
+    .eq("status", "pending")
 
   if (paymentError) {
     console.error(`[Webhook] Payment record creation/update failed: ${paymentError.message}`)

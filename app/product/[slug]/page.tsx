@@ -15,7 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setCart, upsertCartItem } from "@/store/cartSlice";
 import { AppDispatch, RootState } from "@/store/store";
 import { fetchCart } from "@/lib/cart/fetchCart";
-import { addItemToCart } from "@/lib/cart/mutations";
+import { addItemToCart, updateCartItemQuantity } from "@/lib/cart/mutations";
 import { toast } from "react-toastify";
 import ProductInfo from "./ProductInfo";
 import ProductDetailSkeleton from "@/components/common/ProductDetailSkeleton";
@@ -101,10 +101,41 @@ export default function ProductDetailPage() {
 
     const selectedColorHex = selectedColorIndex !== null ? product?.color?.[selectedColorIndex] : undefined;
 
+    const selectedColorName = selectedColorIndex !== null ? product?.color?.[selectedColorIndex] ?? null : null;
+    const normalizeColor = (value?: string | null) => value ?? null;
+
+    const selectedVariantCartItem = product
+        ? cartItems.find(
+            (item) =>
+                item.product_id === product.id &&
+                normalizeColor(item.color) === normalizeColor(selectedColorName)
+        )
+        : undefined;
+
+    const selectedVariantQtyInCart = selectedVariantCartItem?.quantity ?? 0;
+
+    const currentProductQty = cartItems
+        .filter((item) => item.product_id === product?.id)
+        .reduce((sum, item) => sum + item.quantity, 0);
+
+    const qtyOfOtherVariants = Math.max(0, currentProductQty - selectedVariantQtyInCart);
+
+    useEffect(() => {
+        if (!product) return;
+
+        if (selectedVariantQtyInCart > 0) {
+            setQuantity(selectedVariantQtyInCart);
+            return;
+        }
+
+        setQuantity(1);
+    }, [product?.id, selectedColorIndex, selectedVariantQtyInCart]);
+
     const updateQuantity = (type: "inc" | "dec") => {
         setQuantity((prev) => {
             if (type === "inc" && typeof product?.stock === "number") {
-                return Math.min(prev + 1, product.stock);
+                const maxAllowedForThisVariant = Math.max(1, product.stock - qtyOfOtherVariants);
+                return Math.min(prev + 1, maxAllowedForThisVariant);
             }
             return type === "inc" ? prev + 1 : Math.max(1, prev - 1);
         });
@@ -136,19 +167,11 @@ export default function ProductDetailPage() {
         if (!product) return;
 
         if (liked) {
-            const result = await dispatch(removeFromWishlist({ userId, productId: product.id }));
-            if (removeFromWishlist.fulfilled.match(result)) {
-                toast.info("Removed from wishlist");
-            } else {
-                toast.error((result.payload as string) || "Could not remove from wishlist");
-            }
+            await dispatch(removeFromWishlist({ userId, productId: product.id }));
         } else {
             const result = await dispatch(addToWishlist({ userId, productId: product.id, color: selectedColor }));
             if (addToWishlist.fulfilled.match(result)) {
                 dispatch(setColorPreference({ productId: product.id, color: selectedColor || null }));
-                toast.success("Added to wishlist");
-            } else {
-                toast.error((result.payload as string) || "Could not add to wishlist");
             }
         }
     };
@@ -160,17 +183,30 @@ export default function ProductDetailPage() {
 
         setIsAddingToCart(true);
 
-        const currentProductQty = cartItems
-            .filter((item) => item.product_id === product.id)
-            .reduce((sum, item) => sum + item.quantity, 0);
         const selectedQty = Math.max(1, quantity);
-        if (typeof product.stock === "number" && currentProductQty + selectedQty > product.stock) {
+        if (typeof product.stock === "number" && qtyOfOtherVariants + selectedQty > product.stock) {
             toast.error("Stock limit exceeded");
             setIsAddingToCart(false);
             return;
         }
-        const selectedColorName = selectedColorIndex !== null ? product.color?.[selectedColorIndex] ?? null : null;
+
         try {
+            if (selectedVariantCartItem) {
+                const updateOk = await updateCartItemQuantity(selectedVariantCartItem.id, selectedQty);
+                if (!updateOk) {
+                    toast.error("Could not update cart quantity");
+                    return;
+                }
+
+                dispatch(upsertCartItem({
+                    ...selectedVariantCartItem,
+                    quantity: selectedQty,
+                }));
+
+                toast.success(`${product.title} quantity updated in cart`);
+                return;
+            }
+
             const result = await addItemToCart({ userId: user.id, productId: product.id, quantity, color: selectedColorName });
             if (!result.success || !result.item) {
                 toast.error("Stock limit exceeded");
@@ -197,11 +233,8 @@ export default function ProductDetailPage() {
     const isDiscountActive = hasActiveDiscount(product);
     const effectivePrice = getEffectiveProductPrice(product);
     const effectiveOriginalPrice = isDiscountActive ? product.original_price : 0;
-    const currentProductQty = cartItems
-        .filter((item) => item.product_id === product.id)
-        .reduce((sum, item) => sum + item.quantity, 0);
     const isStockLimitReached =
-        typeof product.stock === "number" && currentProductQty + Math.max(1, quantity) > product.stock;
+        typeof product.stock === "number" && qtyOfOtherVariants + Math.max(1, quantity) > product.stock;
 
     return (
         <div>
@@ -241,6 +274,7 @@ export default function ProductDetailPage() {
                             addToCartHandler={addToCartHandler}
                             isAddingToCart={isAddingToCart}
                             isStockLimitReached={isStockLimitReached}
+                            isSelectedVariantInCart={!!selectedVariantCartItem}
                         />
                     </div>
                     <ProductReviews

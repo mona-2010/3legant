@@ -43,20 +43,16 @@ export const BlogListSkeleton = ({ view = 'grid3' }: BlogCardSkeletonProps) => {
 export const BlogDetailSkeleton = () => {
     return (
         <div className="mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px] animate-pulse">
-            {/* Breadcrumb Skeleton */}
             <div className="flex gap-2 my-5">
                 <Skeleton className="h-4 w-16" />
                 <span className="text-gray-300">/</span>
                 <Skeleton className="h-4 w-24" />
             </div>
 
-            {/* Label */}
             <Skeleton className="h-4 w-20 uppercase my-5" />
 
-            {/* Title */}
             <Skeleton className="h-10 md:h-14 w-full lg:w-[70%] mb-5" />
 
-            {/* Metadata */}
             <div className="flex gap-10 mb-10">
                 <div className="flex gap-2 items-center">
                     <Skeleton className="h-6 w-6 rounded-full" />
@@ -68,13 +64,10 @@ export const BlogDetailSkeleton = () => {
                 </div>
             </div>
 
-            {/* Hero Image */}
             <Skeleton className="w-full h-[300px] md:h-[600px] rounded-sm my-10" />
 
-            {/* Excerpt */}
             <Skeleton className="h-6 w-full lg:w-[72%] mb-12" />
 
-            {/* Content Sections */}
             <div className="space-y-12">
                 {[1, 2].map((i) => (
                     <div key={i} className="space-y-4">
@@ -85,7 +78,6 @@ export const BlogDetailSkeleton = () => {
                     </div>
                 ))}
 
-                {/* Gallery Grid Skeleton */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-10">
                     <Skeleton className="w-full h-[400px] md:h-[700px] rounded-sm" />
                     <Skeleton className="w-full h-[400px] md:h-[700px] rounded-sm" />

@@ -5,6 +5,21 @@ import { CartItem, ShippingMethod } from "@/types"
 import { headers } from "next/headers"
 import { createOrder } from "./orders"
 
+const STRIPE_METADATA_VALUE_LIMIT = 500
+
+function toSafeMetadata(input: Record<string, unknown>): Record<string, string> {
+  return Object.entries(input).reduce<Record<string, string>>((acc, [key, value]) => {
+    if (value === undefined || value === null) return acc
+
+    const asString = String(value)
+    acc[key] = asString.length > STRIPE_METADATA_VALUE_LIMIT
+      ? asString.slice(0, STRIPE_METADATA_VALUE_LIMIT)
+      : asString
+
+    return acc
+  }, {})
+}
+
 export async function createCheckoutSession(data: {
   items: CartItem[]
   userInfo: any
@@ -49,6 +64,17 @@ export async function createCheckoutSession(data: {
   console.log(`[Checkout] Created pending Order: ${order.id}. Redirecting to Stripe...`)
 
   try {
+    const sessionMetadata = toSafeMetadata({
+      orderId: order.id,
+      userId: data.userId,
+      shippingMethod: data.shippingMethod,
+      subtotal: data.subtotal,
+      shippingCost: data.shippingCost,
+      discount: data.discount,
+      total: data.total,
+      couponId: data.couponId || "",
+    })
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: data.items.map((item) => ({
@@ -57,10 +83,10 @@ export async function createCheckoutSession(data: {
           product_data: {
             name: item.name,
             images: [item.image],
-            metadata: {
+            metadata: toSafeMetadata({
               product_id: item.product_id || item.id,
               color: item.color || "",
-            }
+            })
           },
           unit_amount: Math.round(item.price * 100),
         },
@@ -70,24 +96,9 @@ export async function createCheckoutSession(data: {
       success_url: `${baseUrl}/cart/complete?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/cart/checkout`,
       expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Expires in exactly 30 minutes
-      metadata: {
-        orderId: order.id,
-        userId: data.userId,
-        userInfo: JSON.stringify(data.userInfo),
-        shippingMethod: data.shippingMethod,
-        subtotal: data.subtotal,
-        shippingCost: data.shippingCost,
-        discount: data.discount,
-        total: data.total,
-        couponId: data.couponId || "",
-        items: JSON.stringify(data.items.map(i => ({
-          id: i.product_id || i.id,
-          quantity: i.quantity,
-          price: i.price,
-          name: i.name,
-          image: i.image,
-          color: i.color
-        })))
+      metadata: sessionMetadata,
+      payment_intent_data: {
+        metadata: sessionMetadata,
       },
     })
 

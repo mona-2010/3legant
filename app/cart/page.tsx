@@ -1,11 +1,11 @@
 "use client"
 
 import ShoppingCart from "@/components/layout/ShoppingCart"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { RootState, AppDispatch } from "@/store/store"
-import { increaseQty, decreaseQty, removeFromCart, removeCoupon } from "@/store/cartSlice"
+import { increaseQty, decreaseQty, removeFromCart } from "@/store/cartSlice"
 import { removeCartItem, updateCartItemQuantity } from "@/lib/cart/mutations"
 import { calculateShippingCost } from "@/lib/shipping"
 import { calculateDiscountAmount } from "@/lib/coupons"
@@ -16,6 +16,7 @@ import { useCouponSync } from "@/lib/hooks"
 export default function CartPage() {
   const dispatch = useDispatch<AppDispatch>()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const quantityFlushTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const pendingQtyByItemRef = useRef<Record<string, number>>({})
 
@@ -76,13 +77,11 @@ export default function CartPage() {
   })
 
   useEffect(() => {
-    if (!appliedCoupon) return
-    const minRequired = appliedCoupon.coupon.min_purchase_amount
-    if (typeof minRequired === "number" && subtotal < minRequired) {
-      dispatch(removeCoupon())
-      toast.warning("Coupon removed: minimum order amount not met")
+    if (searchParams.get("fromCheckoutEmpty") === "1") {
+      toast.info("Please add products to your cart before checkout.")
+      router.replace("/cart")
     }
-  }, [appliedCoupon, subtotal, dispatch])
+  }, [searchParams, router])
 
   useEffect(() => {
     return () => {

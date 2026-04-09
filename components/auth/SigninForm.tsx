@@ -56,14 +56,14 @@ const SigninForm = () => {
   }
 
   return (
-    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-20 md:mt-0 ml-5 md:ml-10 lg:ml-25 text-gray-200">
-      <h1 className="font-poppins text-[40px] font-[500] text-[#141718] leading-15">
+    <div className="w-[80%] md:w-1/3 flex flex-col justify-center my-5 md:my-0 md:mt-0 mx-auto md:mx-10 lg:mx-25 text-gray-200">
+      <h1 className="font-poppins text-[25px] md:text-[40px] font-[500] text-[#141718] md:leading-15">
         Sign In
       </h1>
 
       <p>
         Don’t have an account yet?{" "}
-        <Link href="/sign-up" className="text-[#38CB89] leading-15">
+        <Link href="/sign-up" className="text-[#38CB89] leading-10 md:leading-15">
           Sign Up
         </Link>
       </p>
@@ -124,17 +124,18 @@ const SigninForm = () => {
             {errors.password.message}
           </p>
         )}
-        <div className="flex mt-5 justify-between items-center">
+        <div className="flex mt-0 md:mt-5 justify-between items-center">
           <div className="flex items-center">
             <input
               type="checkbox"
               className="cursor-pointer w-6 h-6"
               {...register("remember")}
             />
-            <p className="ml-2">Remember me</p>
+            <p className="ml-2 text-sm md:text-md ">Remember me</p>
           </div>
-          <Link href='/forget-password'>Forgot Password?</Link>
-
+          <Link href='/forget-password' className="text-sm md:text-md hover:underline">
+            Forgot Password?
+          </Link>
         </div>
         {serverError && (
           <p className="text-red-500 text-sm mt-4">

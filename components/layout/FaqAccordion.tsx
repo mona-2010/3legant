@@ -52,7 +52,7 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({ faqs }) => {
             className="border border-lightgray rounded-md p-4"
           >
             <button
-              className="flex w-full items-center justify-between text-left"
+              className="cursor-pointer flex w-full items-center justify-between text-left"
               onClick={() => toggleFAQ(index)}
               aria-expanded={openIndex === index}
             >

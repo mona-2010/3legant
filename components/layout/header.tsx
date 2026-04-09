@@ -173,7 +173,7 @@ const Header = () => {
             aria-label="Open cart"
           >
             <TbShoppingBag size={22} />
-            <span className="bg-black text-white text-[12px] w-7 h-7 rounded-full flex items-center justify-center">
+            <span className="bg-black text-white text-[12px] w-6 h-6 rounded-full flex items-center justify-center">
               {cartQuantityCount}
             </span>
           </div>
@@ -296,7 +296,7 @@ const Header = () => {
                 Cart
                 <div className="flex items-center">
                   <TbShoppingBag size={25} />
-                  <span className="bg-black text-white text-[12px] w-7 h-7 rounded-full flex items-center justify-center">
+                  <span className="bg-black text-white text-[12px] w-5 h-5 rounded-full flex items-center justify-center">
                     {cartQuantityCount}
                   </span>
                 </div>
@@ -308,9 +308,9 @@ const Header = () => {
                 className="flex items-center justify-between cursor-pointer border-b pb-3 border-lightgray"
               >
                 Wishlist
-                <div className="flex items-center">
-                  <GoHeart size={25} />
-                  <span className="bg-black text-white text-[12px] w-7 h-7 rounded-full flex items-center justify-center">
+                <div className="flex items-center gap-0.5">
+                  <GoHeart size={22} />
+                  <span className="bg-black text-white text-[12px] w-5 h-5 rounded-full flex items-center justify-center">
                     {wishlistCount}
                   </span>
                 </div>

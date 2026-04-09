@@ -31,6 +31,8 @@ interface WishlistItem {
   }
 }
 
+const PAGE_SIZE = 6
+
 const WishlistPage = () => {
   const router = useRouter()
   const supabase = createClient()
@@ -41,16 +43,41 @@ const WishlistPage = () => {
 
   const [items, setItems] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
   const [addingProductId, setAddingProductId] = useState<string | null>(null)
 
-  const fetchWishlist = async () => {
+  const normalizeWishlistItems = (rawItems: WishlistItem[]) => {
+    return rawItems.map((item) => {
+      if (!item.products) return item
+
+      return {
+        ...item,
+        products: {
+          ...item.products,
+          price: getEffectiveProductPrice({
+            price: item.products.price,
+            original_price: item.products.original_price,
+            valid_until: item.products.valid_until,
+          }),
+        },
+      }
+    })
+  }
+
+  const fetchWishlistPage = async (offset: number, append: boolean) => {
     if (!user) {
       setItems([])
       setLoading(false)
+      setLoadingMore(false)
+      setHasMore(false)
       return
     }
 
-    const { data, error } = await supabase
+    if (append) setLoadingMore(true)
+    else setLoading(true)
+
+    const { data, count, error } = await supabase
       .from("wishlist")
       .select(`
         id,
@@ -66,46 +93,51 @@ const WishlistPage = () => {
           is_active,
           stock
         )
-      `)
+      `, { count: "exact" })
       .eq("user_id", user.id)
+      .order("id", { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1)
 
     if (error) {
       console.error(error)
     } else {
-      const nextItems = ((data as unknown as WishlistItem[]) || []).map((item) => {
-        if (!item.products) return item
+      const nextItems = normalizeWishlistItems((data as WishlistItem[]) || [])
+      setItems((prev) => (append ? [...prev, ...nextItems] : nextItems))
 
-        return {
-          ...item,
-          products: {
-            ...item.products,
-            price: getEffectiveProductPrice({
-              price: item.products.price,
-              original_price: item.products.original_price,
-              valid_until: item.products.valid_until,
-            }),
-          },
-        }
-      })
-      setItems(nextItems)
-      dispatch(setWishlistProductIds(nextItems.map((item) => item.product_id)))
+      const nextLoadedIds = append
+        ? [...items.map((item) => item.product_id), ...nextItems.map((item) => item.product_id)]
+        : nextItems.map((item) => item.product_id)
+
+      dispatch(setWishlistProductIds(Array.from(new Set(nextLoadedIds))))
+
+      const totalCount = count ?? 0
+      setHasMore(offset + nextItems.length < totalCount)
     }
 
-    setLoading(false)
+    if (append) setLoadingMore(false)
+    else setLoading(false)
   }
 
   useEffect(() => {
-    if (items.length === 0) {
-      setLoading(true)
+    if (!user) {
+      setItems([])
+      setLoading(false)
+      setLoadingMore(false)
+      setHasMore(false)
+      dispatch(setWishlistProductIds([]))
+      return
     }
-    fetchWishlist()
-  }, [user])
+
+    setItems([])
+    setHasMore(false)
+    void fetchWishlistPage(0, false)
+  }, [user?.id])
 
   const removeItem = async (wishlistId: string, productId: string) => {
     if (!user) return
     await dispatch(removeFromWishlist({ userId: user.id, productId }))
     setItems((prev) => prev.filter((item) => item.id !== wishlistId))
-    toast.info("Removed from wishlist")
+    dispatch(setWishlistProductIds(items.filter((item) => item.id !== wishlistId).map((item) => item.product_id)))
   }
 
   if (loading) return <WishlistSkeleton />
@@ -229,6 +261,18 @@ const WishlistPage = () => {
           </div>
         )
       })}
+
+      {hasMore && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={() => void fetchWishlistPage(items.length, true)}
+            disabled={loadingMore}
+            className="cursor-pointer px-6 py-3 border border-black rounded-full hover:bg-black hover:text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loadingMore ? "Loading..." : "Show More"}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

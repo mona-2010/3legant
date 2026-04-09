@@ -16,6 +16,7 @@ export default function StarInput({ rating, setRating }: StarInputProps) {
             {[1, 2, 3, 4, 5].map((star) => (
                 <button
                     key={star}
+                    className="cursor-pointer"
                     type="button"
                     onClick={() => setRating(star)}
                     onMouseEnter={() => setHover(star)}
