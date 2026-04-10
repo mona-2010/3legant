@@ -85,7 +85,7 @@ const AccountSidebar = ({ user, onLogout, children }: Props) => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 md:gap-12 lg:gap-20 pb-16 mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px]">
+    <div className="flex flex-col md:flex-row gap-8 md:gap-12 lg:gap-20 pb-6 md:pb-16 mx-[30px] md:mx-[50px] lg:mx-[80px] xl:mx-[140px]">
       <div className="flex flex-col lg:min-w-[298px] w-full md:w-64 lg:w-64 bg-gray-100 rounded-xl p-6 h-fit md:sticky md:top-24 self-start">
         {user && (
           <div className="flex flex-col items-center mb-8">

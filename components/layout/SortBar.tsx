@@ -15,7 +15,7 @@ const SortBar = ({ setGrid, grid, setSort, selectedCategory }: Props) => {
     return (
         <div className="flex flex-col items-start md:flex-row justify-between items-center">
             <div className="text-lg font-semibold">{getCategoryLabel(selectedCategory)}</div>
-            <div className="flex items-center gap-1 md:gap-5">
+            <div className="flex items-center w-full justify-between md:w-auto md:justify-end gap-1 md:gap-5">
                 <div className="relative">
                     <select
                         onChange={(e) => setSort(e.target.value)}

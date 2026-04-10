@@ -7,6 +7,22 @@ export const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2026-02-25.clover" })
   : null
 
+const STRIPE_STATUS_CACHE_TTL_MS = 30_000
+const stripeStatusCache = new Map<string, { status: PaymentStatus; expiresAt: number }>()
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function isRateLimitError(err: any): boolean {
+  if (!err) return false
+  if (err.statusCode === 429) return true
+  if (typeof err.code === "string" && err.code.toLowerCase().includes("rate")) return true
+  if (typeof err.type === "string" && err.type.toLowerCase().includes("rate")) return true
+  const message = String(err.message || "").toLowerCase()
+  return message.includes("rate limit") || message.includes("too many requests")
+}
+
 export type PaymentRow = {
   id: string
   order_id: string
@@ -44,16 +60,79 @@ export async function getRefundChargeId(paymentIntentId: string) {
   }
 }
 
+export async function getRefundChargeDetails(paymentIntentId: string) {
+  if (!stripe) {
+    return { chargeId: null, chargeAmount: null, refundedAmount: null, refundableAmount: null, error: "Stripe is not configured" }
+  }
+
+  try {
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["latest_charge"] })
+    const charge = intent.latest_charge
+    if (!charge) {
+      return { chargeId: null, chargeAmount: null, refundedAmount: null, refundableAmount: null, error: "No captured Stripe charge found" }
+    }
+
+    if (typeof charge === "string") {
+      const fullCharge = await stripe.charges.retrieve(charge)
+      const refundableAmount = Math.max(0, (fullCharge.amount || 0) - (fullCharge.amount_refunded || 0))
+      return {
+        chargeId: fullCharge.id,
+        chargeAmount: fullCharge.amount || 0,
+        refundedAmount: fullCharge.amount_refunded || 0,
+        refundableAmount,
+        error: null,
+      }
+    }
+
+    const refundableAmount = Math.max(0, (charge.amount || 0) - (charge.amount_refunded || 0))
+    return {
+      chargeId: charge.id,
+      chargeAmount: charge.amount || 0,
+      refundedAmount: charge.amount_refunded || 0,
+      refundableAmount,
+      error: null,
+    }
+  } catch (err: any) {
+    return { chargeId: null, chargeAmount: null, refundedAmount: null, refundableAmount: null, error: err?.message || "Unable to resolve Stripe charge" }
+  }
+}
+
 export async function resolveStripeStatus(stripePaymentIntentId: string): Promise<PaymentStatus | null> {
   if (!stripe) return null
+
+  const now = Date.now()
+  const cached = stripeStatusCache.get(stripePaymentIntentId)
+  if (cached && cached.expiresAt > now) {
+    return cached.status
+  }
+
+  const maxAttempts = 3
   try {
-    const intent = await stripe.paymentIntents.retrieve(stripePaymentIntentId, { expand: ["latest_charge"] })
-    const latestCharge = intent.latest_charge
-    if (latestCharge && typeof latestCharge !== "string") {
-      if (latestCharge.refunded || latestCharge.amount_refunded > 0) return "refunded"
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const intent = await stripe.paymentIntents.retrieve(stripePaymentIntentId, { expand: ["latest_charge"] })
+        const latestCharge = intent.latest_charge
+        const status = latestCharge && typeof latestCharge !== "string" && (latestCharge.refunded || latestCharge.amount_refunded > 0)
+          ? "refunded"
+          : mapIntentToPaymentStatus(intent)
+
+        stripeStatusCache.set(stripePaymentIntentId, {
+          status,
+          expiresAt: Date.now() + STRIPE_STATUS_CACHE_TTL_MS,
+        })
+        return status
+      } catch (err: any) {
+        if (!isRateLimitError(err) || attempt === maxAttempts) {
+          throw err
+        }
+
+        const backoffMs = 250 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 120)
+        await sleep(backoffMs)
+      }
     }
-    return mapIntentToPaymentStatus(intent)
+    return null
   } catch (err: any) {
+    if (cached) return cached.status
     console.error("Stripe status sync failed:", err?.message || err)
     return null
   }

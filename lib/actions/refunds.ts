@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { Order, OrderRefundRequest, OrderStatus } from "@/types"
 import { verifyAdmin } from "@/lib/actions/admin"
-import { stripe, getRefundChargeId, restockOrder } from "@/lib/actions/order-helpers"
+import { stripe, getRefundChargeDetails, restockOrder } from "@/lib/actions/order-helpers"
 import { getRefundPolicyForOrder } from "@/lib/refund-policy"
 import { getStoreSettings } from "./settings"
 
@@ -184,12 +184,13 @@ export async function reviewRefundRequest(
     }
   }
 
-  const stripeRefundAmount = Math.round(requestedRefundAmount * 100)
+  const chargeDetails = await getRefundChargeDetails(payment.stripe_payment_intent_id)
+  const { chargeId, refundableAmount, error: chargeError } = chargeDetails
+  if (chargeError || !chargeId) return { data: null, error: chargeError || "Unable to find Stripe charge" }
+  if (!refundableAmount || refundableAmount <= 0) return { data: null, error: "No refundable amount is left on this Stripe charge" }
 
-  const { chargeId, error: chargeError } = await getRefundChargeId(payment.stripe_payment_intent_id)
-  if (chargeError || !chargeId) {
-    return { data: null, error: chargeError || "Unable to find Stripe charge" }
-  }
+  const stripeRefundAmount = Math.min(Math.round(requestedRefundAmount * 100), refundableAmount)
+  const finalRefundAmount = Number((stripeRefundAmount / 100).toFixed(2))
 
   if (!stripe) return { data: null, error: "Stripe is not configured" }
 
@@ -200,13 +201,13 @@ export async function reviewRefundRequest(
       metadata: {
         order_id: orderId,
         payment_id: payment.id,
-        refund_amount: requestedRefundAmount.toFixed(2),
+        refund_amount: finalRefundAmount.toFixed(2),
         refund_rate: refundRate.toString(),
         refund_days: daysSinceOrder.toString(),
       },
     })
 
-    const isFullRefund = Math.abs(requestedRefundAmount - Number(order.total_price || 0)) < 0.01
+    const isFullRefund = Math.abs(finalRefundAmount - Number(order.total_price || 0)) < 0.01
 
     const nextUserInfo = {
       ...(order.user_info || {}),
@@ -217,7 +218,7 @@ export async function reviewRefundRequest(
         reviewed_at: now,
         refunded_at: stripeRefund.status === "failed" ? null : now,
         stripe_refund_id: stripeRefund.id,
-        refund_amount: requestedRefundAmount,
+        refund_amount: finalRefundAmount,
         refund_rate: refundRate,
         days_since_order: daysSinceOrder,
         is_partial_refund: !isFullRefund,

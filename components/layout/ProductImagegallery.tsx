@@ -74,7 +74,7 @@ export default function ProductImageGallery({
   return (
     <div className="flex flex-col gap-5 w-full">
       <div
-        className="relative w-full h-[250px] md:h-[400px] lg:h-[650px] bg-white flex items-center justify-center overflow-hidden touch-pan-y"
+        className="relative w-full h-[350px] md:h-[400px] lg:h-[650px] bg-white flex items-center justify-center overflow-hidden touch-pan-y"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -90,7 +90,7 @@ export default function ProductImageGallery({
         <button
           onClick={goPrev}
           disabled={!hasImages}
-          className="hidden md:block cursor-pointer absolute left-4 z-10 bg-white p-3 rounded-full shadow"
+          className="cursor-pointer absolute left-4 z-10 bg-white p-3 rounded-full shadow"
           aria-label="Previous image"
         >
           <IoChevronBack />
@@ -103,7 +103,7 @@ export default function ProductImageGallery({
               alt="Product"
               fill
               priority
-              className="object-contain lg:object-contain mix-blend-multiply max-h-[250px] sm:max-h-[400px] md:max-h-full"
+              className="object-contain lg:object-contain mix-blend-multiply max-h-[350px] sm:max-h-[400px] md:max-h-full"
               sizes="(min-width: 1280px) 50vw, (min-width: 768px) 50vw, 100vw"
             />
 
@@ -125,7 +125,7 @@ export default function ProductImageGallery({
         <button
           onClick={goNext}
           disabled={!hasImages}
-          className="hidden md:block cursor-pointer absolute right-4 z-10 bg-white p-3 rounded-full shadow"
+          className="cursor-pointer absolute right-4 z-10 bg-white p-3 rounded-full shadow"
           aria-label="Next image"
         >
           <IoChevronForward />

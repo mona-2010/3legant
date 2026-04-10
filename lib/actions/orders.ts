@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { Order, OrderItem, OrderStatus, PaymentStatus, ShippingMethod, OrderUserInfo } from "@/types"
-import { PaymentRow, reserveOrderStock, releaseReservedStock, stripe, getRefundChargeId, restockOrder } from "@/lib/actions/order-helpers"
+import { PaymentRow, reserveOrderStock, releaseReservedStock, stripe, getRefundChargeDetails, restockOrder } from "@/lib/actions/order-helpers"
 import { syncSinglePaymentWithStripe, syncOrderPaymentsWithStripe, } from "@/lib/actions/stripe-sync"
 import { saveOrderAddresses } from "@/lib/actions/order-addresses"
 import { getStoreSettings } from "./settings"
@@ -316,9 +316,13 @@ export async function cancelOrder(orderId: string) {
   const payment = Array.isArray(order.payments) ? order.payments[0] : order.payments
 
   if (shouldRefund && order.status === "processing" && payment?.stripe_payment_intent_id) {
-    const { chargeId, error: chargeError } = await getRefundChargeId(payment.stripe_payment_intent_id)
+    const { chargeId, refundableAmount, error: chargeError } = await getRefundChargeDetails(payment.stripe_payment_intent_id)
     if (chargeError || !chargeId) {
       return { error: `Stripe Refund Failed: ${chargeError || "Could not resolve Stripe charge ID"}. The order status has not been changed.` }
+    }
+
+    if (!refundableAmount || refundableAmount <= 0) {
+      return { error: "Stripe Refund Failed: This charge has no refundable amount left. The order status has not been changed." }
     }
 
     if (!stripe) return { error: "Stripe configuration missing. Refund aborted." }
@@ -326,7 +330,7 @@ export async function cancelOrder(orderId: string) {
     try {
       await stripe.refunds.create({
         charge: chargeId,
-        amount: Math.round(Number(order.total_price) * 100),
+        amount: refundableAmount,
         metadata: { order_id: orderId, cancellation: "user_requested" }
       })
     } catch (err: any) {

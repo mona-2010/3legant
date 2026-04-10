@@ -68,6 +68,7 @@ export async function getAllPayments(filters?: {
   const payments = data || []
   for (const payment of payments) {
     if (!payment.stripe_payment_intent_id) continue
+    if (payment.status === "cancelled" || payment.status === "failed" || payment.status === "refunded") continue
 
     const remoteStatus = await resolveStripeStatus(payment.stripe_payment_intent_id)
     if (!remoteStatus || remoteStatus === payment.status) continue

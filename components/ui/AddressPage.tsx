@@ -56,8 +56,29 @@ const AddressPage = () => {
         setIsModalOpen(true)
     }
 
+    const hasMissingRequiredFields = (address: Partial<UserAddress>) => {
+        const requiredValues = [
+            address.first_name,
+            address.last_name,
+            address.phone,
+            address.street_address,
+            address.city,
+            address.state,
+            address.zip_code,
+            address.country,
+        ]
+
+        return requiredValues.some((value) => !String(value || "").trim())
+    }
+
     const handleSave = async () => {
         if (!editingAddress) return
+
+        if (hasMissingRequiredFields(editingAddress)) {
+            toast.error("Please fill all required fields")
+            return
+        }
+
         setSaving(true)
 
         if (editingAddress.id) {
@@ -224,6 +245,7 @@ const AddressPage = () => {
                                     className="w-full border p-2 rounded-md text-sm outline-none"
                                     value={editingAddress.first_name || ""}
                                     onChange={(e) => setEditingAddress({ ...editingAddress, first_name: e.target.value })}
+                                    required
                                 />
                             </div>
 
@@ -233,6 +255,7 @@ const AddressPage = () => {
                                     className="w-full border p-2 rounded-md text-sm outline-none"
                                     value={editingAddress.last_name || ""}
                                     onChange={(e) => setEditingAddress({ ...editingAddress, last_name: e.target.value })}
+                                    required
                                 />
                             </div>
 
@@ -242,6 +265,8 @@ const AddressPage = () => {
                                     className="w-full border p-2 rounded-md text-sm outline-none"
                                     value={editingAddress.phone || ""}
                                     onChange={(e) => setEditingAddress({ ...editingAddress, phone: e.target.value })}
+                                    required
+
                                 />
                             </div>
 
@@ -251,6 +276,7 @@ const AddressPage = () => {
                                     className="w-full border p-2 rounded-md text-sm outline-none"
                                     value={editingAddress.street_address || ""}
                                     onChange={(e) => setEditingAddress({ ...editingAddress, street_address: e.target.value })}
+                                    required
                                 />
                             </div>
 
@@ -261,6 +287,7 @@ const AddressPage = () => {
                                         className="w-full border p-2 rounded-md text-sm outline-none"
                                         value={editingAddress.city || ""}
                                         onChange={(e) => setEditingAddress({ ...editingAddress, city: e.target.value })}
+                                        required
                                     />
                                 </div>
                                 <div>
@@ -269,6 +296,7 @@ const AddressPage = () => {
                                         className="w-full border p-2 rounded-md text-sm outline-none"
                                         value={editingAddress.state || ""}
                                         onChange={(e) => setEditingAddress({ ...editingAddress, state: e.target.value })}
+                                        required
                                     />
                                 </div>
                             </div>
@@ -280,6 +308,7 @@ const AddressPage = () => {
                                         className="w-full border p-2 rounded-md text-sm outline-none"
                                         value={editingAddress.zip_code || ""}
                                         onChange={(e) => setEditingAddress({ ...editingAddress, zip_code: e.target.value })}
+                                        required
                                     />
                                 </div>
                                 <div>
@@ -288,6 +317,7 @@ const AddressPage = () => {
                                         className="w-full border p-2 rounded-md text-sm outline-none"
                                         value={editingAddress.country || ""}
                                         onChange={(e) => setEditingAddress({ ...editingAddress, country: e.target.value })}
+                                        required
                                     />
                                 </div>
                             </div>
@@ -302,7 +332,7 @@ const AddressPage = () => {
                             </button>
                             <button
                                 onClick={handleSave}
-                                disabled={saving}
+                                disabled={saving || hasMissingRequiredFields(editingAddress)}
                                 className="cursor-pointer px-4 py-2 text-sm font-medium bg-black text-white rounded-md disabled:opacity-50"
                             >
                                 {saving ? "Saving..." : "Save Changes"}

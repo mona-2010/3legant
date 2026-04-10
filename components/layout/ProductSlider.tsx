@@ -56,10 +56,8 @@ const ProductSlider = ({ products, grid }: Props) => {
     const isLiked = wishlistProductIds.includes(productId)
     if (isLiked) {
       dispatch(removeFromWishlist({ userId: user.id, productId }))
-      toast.info("Removed from wishlist")
     } else {
       dispatch(addToWishlist({ userId: user.id, productId }))
-      toast.success("Added to wishlist")
     }
   }
 

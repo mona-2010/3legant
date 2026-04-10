@@ -13,7 +13,6 @@ import {
 import { removeCartItem, updateCartItemQuantity } from "@/lib/cart/mutations"
 import TintedProductImage from "./TintedProductImage"
 import { HiMinus, HiPlus } from "react-icons/hi"
-import { toast } from "react-toastify"
 
 interface Props {
   cartOpen: boolean
@@ -73,7 +72,6 @@ export default function CartPopup({ cartOpen, setCartOpen }: Props) {
 
   const handleCheckout = () => {
     if (cartItems.length === 0) {
-      toast.info("Please add items to checkout.")
       return
     }
 

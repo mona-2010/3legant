@@ -48,7 +48,11 @@ export default function ProductDetailsSection({
 
   const handleSlugChange = (slug: string) => {
     setSlugTouched(true)
-    setForm((prev) => ({ ...prev, slug: slugify(slug) }))
+    const editableSlug = slug
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+    setForm((prev) => ({ ...prev, slug: editableSlug }))
   }
 
   const handleSkuChange = (sku: string) => {

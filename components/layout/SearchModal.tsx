@@ -69,6 +69,7 @@ export default function SearchModal({ open, setOpen }: Props) {
       const { data } = await supabase
         .from("products")
         .select("id,title,price,original_price,valid_until,image,color")
+        .eq("is_active", true)
         .ilike("title", `%${trimmed}%`);
 
       if (requestId !== searchRequestSeqRef.current) return;

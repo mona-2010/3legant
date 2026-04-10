@@ -141,7 +141,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
                         <option value="oldest">Oldest</option>
                     </select>
 
-                    <div className="md:flex text-xl rounded-md p-1 gap-2 hidden md:block">
+                    <div className="lg:flex text-xl rounded-md p-1 gap-2 hidden ">
                         <button
                             onClick={() => setView("grid3")}
                             className={`hidden sm:hidden md:block cursor-pointer p-1
@@ -153,7 +153,7 @@ const BlogPage = ({ blogs }: BlogPageProps) => {
 
                         <button
                             onClick={() => setView("grid2")}
-                            className={`hidden sm:hidden md:block cursor-pointer p-1
+                            className={`hidden sm:hidden lg:block cursor-pointer p-1
         ${view === "grid2" ? "bg-lightgray" : " text-gray-500"}
         `}
                         >

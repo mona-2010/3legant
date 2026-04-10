@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useForm, SubmitHandler } from "react-hook-form"
+import { useDispatch, useSelector } from "react-redux"
 import { createClient } from "@/lib/supabase/client"
+import { fetchUserProfile, setUserProfile } from "@/store/authSlice"
 import { updateUserProfile, uploadAvatarAndUpdateProfile } from "@/lib/actions/profile"
 import { v4 as uuidv4 } from "uuid"
 import { useRouter } from "next/navigation"
@@ -10,6 +12,7 @@ import Image from "next/image"
 import { toast } from "react-toastify"
 import { useAuth } from "@/components/providers/AuthProvider"
 import AccountSkeleton from "../common/AccountSkeleton"
+import type { AppDispatch, RootState } from "@/store/store"
 
 type AccountFormValues = {
   firstName: string
@@ -24,7 +27,9 @@ type AccountFormValues = {
 const AccountPage = () => {
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
+  const dispatch = useDispatch<AppDispatch>()
   const { user, loading } = useAuth()
+  const profile = useSelector((state: RootState) => state.auth.profile)
 
   const [serverError, setServerError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -46,34 +51,26 @@ const AccountPage = () => {
       return
     }
 
-    const fetchProfile = async () => {
-      try {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, avatar_url")
-          .eq("id", user.id)
-          .single()
+    // Fetch profile from Redux cache (will check TTL and only fetch from API if stale)
+    void dispatch(fetchUserProfile())
+  }, [loading, router, user, dispatch])
 
-        const fullName = profile?.full_name || user.user_metadata?.full_name || ""
-        const [firstName, ...lastParts] = fullName.split(" ")
+  useEffect(() => {
+    // Update form when profile data is loaded from Redux
+    const fullName = profile.full_name || user?.user_metadata?.full_name || ""
+    const [firstName, ...lastParts] = fullName.split(" ")
 
-        setValue("firstName", firstName || "")
-        setValue("lastName", lastParts.join(" ") || "")
-        setValue("displayName", user.user_metadata?.display_name || "")
-        setValue("email", user.email || "")
+    setValue("firstName", firstName || "")
+    setValue("lastName", lastParts.join(" ") || "")
+    setValue("displayName", user?.user_metadata?.display_name || "")
+    setValue("email", user?.email || "")
 
-        if (profile?.avatar_url) {
-          setAvatarUrl(profile.avatar_url)
-        } else if (user.user_metadata?.avatar_url) {
-          setAvatarUrl(user.user_metadata.avatar_url)
-        }
-      } catch (err) {
-        console.error("Unexpected error fetching user profile:", err)
-      }
+    if (profile.avatar_url) {
+      setAvatarUrl(profile.avatar_url)
+    } else if (user?.user_metadata?.avatar_url) {
+      setAvatarUrl(user.user_metadata.avatar_url)
     }
-
-    fetchProfile()
-  }, [loading, router, setValue, supabase, user])
+  }, [profile.full_name, profile.avatar_url, user, setValue])
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -124,6 +121,12 @@ const AccountPage = () => {
       setAvatarUrl(publicUrl)
       toast.success("Avatar updated!")
       
+      // Update Redux cache with new avatar
+      dispatch(setUserProfile({
+        full_name: profile.full_name,
+        avatar_url: publicUrl,
+      }))
+      
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
@@ -144,10 +147,24 @@ const AccountPage = () => {
       return
     }
 
-    if (data.oldPassword) {
+    const oldPassword = data.oldPassword?.trim() || ""
+    const newPassword = data.newPassword?.trim() || ""
+    const repeatPassword = data.repeatPassword?.trim() || ""
+
+    if (oldPassword && !newPassword && !repeatPassword) {
+      setServerError("Enter new password")
+      return
+    }
+
+    if (newPassword !== repeatPassword) {
+      setServerError("New and repeat new password does not match")
+      return
+    }
+
+    if (oldPassword) {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email || "",
-        password: data.oldPassword,
+        password: oldPassword,
       })
       if (signInError) {
         setServerError("Old password is incorrect")
@@ -155,14 +172,9 @@ const AccountPage = () => {
       }
     }
 
-    if (data.newPassword) {
-      if (data.newPassword !== data.repeatPassword) {
-        setServerError("New passwords do not match")
-        return
-      }
-
+    if (newPassword) {
       const { error: updateError } = await supabase.auth.updateUser({
-        password: data.newPassword,
+        password: newPassword,
       })
 
       if (updateError) {
@@ -183,8 +195,17 @@ const AccountPage = () => {
       return
     }
 
+    // Update Redux cache after successful profile update
+    dispatch(setUserProfile({
+      full_name: fullName,
+      avatar_url: profile.avatar_url,
+    }))
+
     toast.success("Account updated successfully")
     setSuccessMsg("Account updated successfully")
+    setValue("oldPassword", "")
+    setValue("newPassword", "")
+    setValue("repeatPassword", "")
   }
 
   if (loading || !user) return <AccountSkeleton />

@@ -36,7 +36,7 @@ const CheckoutDetail = ({
 }: Props) => {
   const dispatch = useDispatch()
   const shippingOptions = buildShippingOptions(["free", "express", "pickup"])
-  const renderOrderSummaryContent = (showCouponNotifications: boolean) => (
+  const renderOrderSummaryContent = () => (
     <>
       <h1 className="pb-4 font-semibold text-lg">Order Summary</h1>
 
@@ -46,7 +46,7 @@ const CheckoutDetail = ({
             key={item.id}
             className="flex sm:flex-row justify-between gap-3 mb-4"
           >
-            <div className="flex gap-3">
+            <div className="flex gap-3 bg-white">
               <div className="relative w-[72px] h-[72px] sm:w-[90px] sm:h-[90px]">
                 <TintedProductImage
                   src={item.image}
@@ -119,7 +119,7 @@ const CheckoutDetail = ({
       </div>
 
       <hr className="my-4" />
-      <CouponInput subtotal={subtotal} showNotification={showCouponNotifications} />
+      <CouponInput subtotal={subtotal} showNotification={false} />
       <hr className="my-4" />
 
       <div className="flex justify-between text-gray-600">
@@ -150,13 +150,13 @@ const CheckoutDetail = ({
         appliedCouponId={appliedCouponId}
         mobileOrderSummary={
           <aside className="border border-gray-200 rounded p-4 sm:p-5">
-            {renderOrderSummaryContent(false)}
+            {renderOrderSummaryContent()}
           </aside>
         }
       />
       <div className="hidden lg:block w-full lg:w-1/3">
         <aside className="border border-gray-200 rounded p-4 sm:p-5 lg:sticky lg:top-10">
-          {renderOrderSummaryContent(true)}
+          {renderOrderSummaryContent()}
         </aside>
       </div>
     </div>

@@ -155,11 +155,11 @@ const ShopPage = () => {
             )}
           </div>
           {hasMore && !hasNoResults && (
-            <div className="flex justify-center mt-10">
+            <div className="flex justify-center mt-7 md:mt-10">
               <button
                 onClick={() => void fetchMore()}
                 disabled={loadingMore}
-                className="cursor-pointer px-6 md:px-6 lg:px-8 py-3 border border-black rounded-full hover:bg-black hover:text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer px-6 md:px-6 lg:px-8 py-2 md:py-3 border border-black rounded-full hover:bg-black hover:text-white transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loadingMore ? "Loading..." : "Show More"}
               </button>

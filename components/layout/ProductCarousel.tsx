@@ -26,7 +26,7 @@ const ProductCarousel = async () => {
         </div>
       </section>
 
-      <section className="mt-8 mb-12 ml-[30px] md:ml-[50px] lg:ml-[80px] xl:ml-[140px]">
+      <section className="my-10 ml-[30px] md:ml-[50px] lg:ml-[80px] xl:ml-[140px]">
         <div className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory">
           {products.map((product) => (
             <div key={product.id} className="snap-start shrink-0 w-[280px]">

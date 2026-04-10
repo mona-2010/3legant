@@ -149,7 +149,7 @@ export default function ShoppingCart({
                   className="grid grid-cols-1 md:grid-cols-[3fr_1fr_1fr_1fr] border-b border-lightgray py-5 md:py-6 gap-4 md:gap-0 items-center"
                 >
                   <div className="flex gap-3 sm:gap-4 items-center">
-                    <div className="relative w-[72px] h-[72px] sm:w-20 sm:h-20">
+                    <div className="relative w-[72px] h-[72px] sm:w-20 sm:h-20 bg-white">
                       <TintedProductImage
                         src={item.image}
                         alt={item.name}
@@ -230,7 +230,7 @@ export default function ShoppingCart({
         </h2>
 
         <div className="my-3 w-full sm:w-fit">
-          <CouponInput subtotal={subtotal} showNotification={true} />
+          <CouponInput subtotal={subtotal} showNotification={false} />
         </div>
 
         <aside className="lg:hidden border p-5 sm:p-6 rounded-lg h-fit mt-6">

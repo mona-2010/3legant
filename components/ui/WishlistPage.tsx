@@ -225,7 +225,7 @@ const WishlistPage = () => {
             <div
               className="grid sm:grid-cols-[3fr_1fr] md:grid-cols-[3fr_1fr_1fr] items-center"
             >
-              <div className="flex items-center gap-3 w-full">
+              <div className="flex items-center gap-3 w-full bg-white">
                 <button
                   onClick={() => removeItem(item.id, item.product_id)}
                   className="cursor-pointer text-gray-400 hover:text-red-500 flex-shrink-0"
@@ -239,7 +239,7 @@ const WishlistPage = () => {
                     alt={product.title}
                     fill
                     colorHex={colorPreferences[product.id] ?? product.color?.[0]}
-                    className="object-fit"
+                    className="object-fit mix-blend-multiply"
                   />
                 </div>
 
