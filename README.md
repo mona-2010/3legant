@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 3legant — E-Commerce Website
 
+A modern, full-stack e-commerce platform built with **Next.js**, **Supabase**, **Redux Toolkit**, and **Stripe**. Designed for performance, scalability, and a seamless shopping experience across all devices.
+
+---
+
+## Live Demo
+
+> https://3legant-tau.vercel.app
+
+---
+
+## Features
+
+### Customer-facing
+- Product browsing with category filters, price filters, and sort options
+- Detailed product pages with image gallery, colour selection, stock status, and countdown timer for deals
+- Shopping cart with quantity controls and real-time subtotal calculation
+- Coupon code application with validation (expiry, usage limit, minimum purchase)
+- Wishlist to save products for later
+- Secure checkout with saved shipping addresses
+- Stripe payment integration (credit card and PayPal)
+- Order confirmation page with full order summary
+- Order history and tracking in the account dashboard
+- Customer reviews and star ratings with threaded replies and likes
+- Blog listing and detail pages
+- Contact form
+
+### Admin-facing
+- Admin dashboard with revenue, order count, and customer overview
+- Full product management (add, edit, delete, image upload)
+- Order management with status updates (pending → shipped → delivered)
+- Coupon management (create, activate/deactivate, set expiry and usage limits)
+- Blog post management (create, publish, feature)
+- Contact message inbox
+
+### Technical
+- Server-side rendering (SSR) and static site generation (SSG) via Next.js App Router
+- Row-Level Security (RLS) policies on all Supabase tables
+- Centralised state management for cart, coupons, and orders via Redux Toolkit
+- Fully responsive UI built with Tailwind CSS
+- Image storage via Supabase Storage
+- Real-time order status updates
+- All 19 functional test cases passing
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| State Management | Redux Toolkit |
+| Backend & Database | Supabase (PostgreSQL) |
+| Authentication | Supabase Auth |
+| Payments | Stripe |
+| Deployment | Vercel |
+
+---
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js v18 or higher
+- npm or yarn
+- A [Supabase](https://supabase.com) account
+- A [Stripe](https://stripe.com) account
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/MonalisaPadhy/3legant.git
+   cd 3legant
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+
+   Create a `.env.local` file in the root directory:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+   STRIPE_SECRET_KEY=your_stripe_secret_key
+   ```
+
+4. **Set up the Supabase database**
+
+   - Create a new Supabase project
+   - Run the SQL schema from `/supabase/schema.sql` in the Supabase SQL editor
+   - Enable Row-Level Security on all tables
+   - Set up Supabase Storage buckets for product images and blog cover images
+
+5. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+---
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous (public) key |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (client-side) |
+| `STRIPE_SECRET_KEY` | Stripe secret key (server-side only) |
+
+---
+
+## Deployment
+
+The project is deployed on **Vercel**.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Install Vercel CLI
+npm install -g vercel
+
+# Deploy
+vercel
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Add all environment variables in the Vercel project dashboard under **Settings → Environment Variables** before deploying.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Future Scope
 
-## Learn More
+- Real-time order tracking via Supabase real-time subscriptions
+- AI-powered product recommendations based on browsing and purchase history
+- Redis-based caching for frequently accessed product data
+- Email notification service (Resend or SendGrid)
+- Loyalty rewards system
+- Admin sales analytics dashboard
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is for educational and portfolio purposes.
