@@ -27,7 +27,7 @@ A modern, full-stack e-commerce platform built with **Next.js**, **Supabase**, *
 - Contact form
 
 ### Admin-facing
-- Admin dashboard with revenue, order count, and customer overview
+- Admin dashboard with revenue, order count and payment history
 - Full product management (add, edit, delete, image upload)
 - Order management with status updates (pending → shipped → delivered)
 - Coupon management (create, activate/deactivate, set expiry and usage limits)
